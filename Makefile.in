@@ -16,7 +16,7 @@
 #  GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along wth PyCLIgen; see the file COPYING.  If not, see
+# along wth PyCLIgen; see the file LICENSE.  If not, see
 # <http://www.gnu.org/licenses/>.
 #
 
@@ -26,17 +26,19 @@ top_srcdir  	= @top_srcdir@
 CC		= @CC@
 CFLAGS  	= @CFLAGS@ -fPIC
 LIBS    	= @LIBS@
-INCLUDES 	= @INCLUDES@ -I. -I$(top_srcdir)/include 
+INCLUDES 	= @INCLUDES@ @python_CFLAGS@ -I. -I$(top_srcdir)/include
 CPPFLAGS  	= @CPPFLAGS@ $(INCLUDES)
 SHELL		= /bin/sh
 
-SRC     =  py_cligen.c py_cligen_cv.c py_cligen_cvec.c py_cligen_pt.c
+SRC     =  pycligen.c pycligen_cv.c pycligen_cvec.c pycligen_pt.c
 OBJS    = $(SRC:.c=.o)
 MODULE   = _cligen.so
 
+
 all:	$(MODULE)
 
-$(MODULE):	$(patsubst %,$(MODULE)(%),$(OBJS))
+$(MODULE):	$(OBJS)
+	$(CC) -shared -o $@ $(OBJS) -Wl,-soname=$(MODULE) $(LIBS)
 
 install:
 
