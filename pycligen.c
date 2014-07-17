@@ -16,7 +16,7 @@
  *  GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along wth PyCLIgen; see the file COPYING.  If not, see
+ * along wth PyCLIgen; see the file LICENSE.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
 
@@ -25,10 +25,10 @@
 
 #include <cligen/cligen.h>
 
-#include "py_cligen.h"
-#include "py_cligen_cv.h"
-#include "py_cligen_pt.h"
-#include "py_cligen_cvec.h"
+#include "pycligen.h"
+#include "pycligen_cv.h"
+#include "pycligen_pt.h"
+#include "pycligen_cvec.h"
 
 #define CLIgen_MAGIC  0x8abe91a1
 
@@ -100,50 +100,11 @@ CLIgen_str2fn(char *name, void *arg, char **error)
 }
 
 
-static int
-CLIgen_do_parse(CLIgen *self, char *str/*, char *name*/)
-{
-    parse_tree pt = {0,};     /* parse tree */
-    cvec *globals_vec = NULL;
-    cg_var *cv = NULL;
-    int retval = -1;
-
-    if ((globals_vec = cvec_new(0)) == NULL)
-	goto done;
-
-    if (cligen_parse_str(self->handle->ch_cligen, str, NULL, &pt, globals_vec) < 0)
-	goto done;
-    if (cligen_callback_str2fn(pt, CLIgen_str2fn, self) < 0)     
-	goto done;
-
-    /* Populate globals dictionary */
-    for (cv = NULL; (cv = cvec_each(globals_vec, cv)); ) {
-	if (PyDict_SetItemString(self->globals, cv_name_get(cv), 
-				 PyUnicode_FromString(cv_string_get(cv))) < 0)
-	    goto done;
-    }
-    
-    if (cligen_tree_add(self->handle->ch_cligen, "main", pt) < 0)
-	goto done;
-    cligen_tree_active_set(self->handle->ch_cligen, "main");
-
-    
-    retval = 0;
- done:
-    if (globals_vec)
-	cvec_free(globals_vec);
-    if (retval != 0 && pt.pt_vec != NULL)
-	cligen_parsetree_free(pt, 1);
-    
-    return retval;
-}
-
-
 
 static void
 CLIgen_dealloc(CLIgen* self)
 {
-    Py_XDECREF(self->globals);
+    Py_XDECREF(self->ptlist);
     if (self->handle) {
 	if (self->handle->ch_cligen)
 	    cligen_exit(self->handle->ch_cligen);
@@ -161,13 +122,7 @@ CLIgen_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 CLIgen_init(CLIgen *self, PyObject *args, PyObject *kwds)
 {
-    char *str = NULL;
-   
-    static char *kwlist[] = {"str", NULL};
-    
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|s", kwlist, &str))
-	return -1;
-    if ((self->globals = PyDict_New()) == NULL)
+    if ((self->ptlist = PyList_New(0)) == NULL)
 	return -1;
     if ((self->handle = CLIgen_handle_init()) == NULL)
 	return -1;
@@ -176,15 +131,11 @@ CLIgen_init(CLIgen *self, PyObject *args, PyObject *kwds)
     self->handle->ch_self = self;
     cligen_userhandle_set(self->handle->ch_cligen, self->handle);
     
-    /* If a parse string was given process it now */
-    if (str != NULL)
-	if (CLIgen_do_parse(self, str) < 0)
-	    return -1;
-    
     return 0;
 }
 
 
+#if 0
 static PyObject *
 CLIgen_parse_str(CLIgen *self, PyObject *args)
 {
@@ -195,13 +146,13 @@ CLIgen_parse_str(CLIgen *self, PyObject *args)
 
     return PyLong_FromLong(CLIgen_do_parse(self, str));
 }
-
+#endif
 
 static PyObject *
-CLIgen_globals(CLIgen *self)
+_CLIgen_ptlist(CLIgen *self)
 {
-    Py_INCREF(self->globals);
-    return self->globals;
+    Py_INCREF(self->ptlist);
+    return self->ptlist;
 }
 
 
@@ -284,16 +235,20 @@ CLIgen_tree_add(CLIgen *self, PyObject *args)
     char *name;
     PyObject *Pt;
     parse_tree *pt;
+    PyObject *Value;
 
     if (!PyArg_ParseTuple(args, "sO!", &name, &ParseTree_Type, &Pt))
         return NULL;
 
     pt = ParseTree_pt(Pt);
     if (cligen_tree_add(self->handle->ch_cligen, name, *pt) < 0) {
-        PyErr_SetString(PyExc_MemoryError, "failed to allocate memory");
+        PyErr_SetString(PyExc_MemoryError, "cligen_tree_add");
         return NULL;
     }
     
+    Value =  PyObject_CallMethod(self->ptlist, "append", "O", Pt);
+    Py_XDECREF(Value);
+	
     return PyLong_FromLong(0);
 }
 
@@ -369,12 +324,8 @@ CLIgen_print(CLIgen *self)
 
 
 static PyMethodDef CLIgen_methods[] = {
-    {"globals", (PyCFunction)CLIgen_globals, METH_NOARGS,
-     "Get global variables specified by syntax format"
-    },
-
-    {"parse_str", (PyCFunction)CLIgen_parse_str, METH_VARARGS,
-     "Parse CLIgen specification into a parse-tree"
+    {"_ptlist", (PyCFunction)_CLIgen_ptlist, METH_NOARGS,
+     "Get list of ParseTrees added"
     },
 
     {"prompt", (PyCFunction)CLIgen_prompt, METH_NOARGS,
