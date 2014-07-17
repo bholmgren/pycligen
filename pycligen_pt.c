@@ -16,17 +16,18 @@
  *  GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along wth PyCLIgen; see the file COPYING.  If not, see
+ * along wth PyCLIgen; see the file LICENSE.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
+#include <errno.h>
 #include <Python.h>
 #include "structmember.h"
 
 #include <cligen/cligen.h>
 
-#include "py_cligen.h"
+#include "pycligen.h"
 
 typedef struct {
     PyObject_HEAD
@@ -51,24 +52,19 @@ ParseTree_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
 {
+    FILE *f = NULL;
     char *file = NULL;
     char *syntax = NULL;
-    char *name;
     CLIgen *cgen;
     cvec *globals_vec = NULL;
     int retval = -1;
     cg_var *cv;
 
 
-    static char *kwlist[] = {"syntax", "file", NULL};
+    static char *kwlist[] = {"CLIgen", "syntax", "file", NULL};
 
-#if 0
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "Os|ss", kwlist, &cgen, &name, &syntax, &file))
-	return NULL;
-#endif
-
-    if (! PyArg_ParseTuple(args, "Os", &cgen, &syntax, &name))
-        return -1;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|ss", kwlist, (PyObject *)&cgen, &syntax, &file))
+	return -1;
     
     memset(&self->pt, 0, sizeof(self->pt));
     if ((globals_vec = cvec_new(0)) == NULL)
@@ -77,13 +73,37 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
     if ((self->globals = PyDict_New()) == NULL)
 	goto done;
 
-    if (cligen_parse_str(cgen->handle->ch_cligen,
-			 syntax,
-			 name,
-			 &self->pt,
-			 globals_vec) < 0)
-	goto done;
-	
+    if (syntax != NULL) {
+	if (cligen_parse_str(cgen->handle->ch_cligen,
+			     syntax,
+			     "__syntax__",
+			     &self->pt,
+			     globals_vec) < 0)
+	    goto done;
+    } else if (file != NULL) {
+	if ((f = fopen(file, "r")) == NULL) {
+	    switch(errno) {
+	    case EACCES:
+		PyErr_Format(PyExc_PermissionError, "%s: '%s'", strerror(errno), file);
+		goto done;
+	    case ENOENT:
+		PyErr_Format(PyExc_FileNotFoundError, "%s: '%s'", strerror(errno), file);
+		goto done;
+	    default:
+		PyErr_Format(PyExc_Exception, "%s: '%s'", strerror(errno), file);
+		goto done;
+	    }
+	}
+	if (cligen_parse_file(cgen->handle->ch_cligen,
+			      f,
+			      file,
+			      &self->pt,
+			      globals_vec) < 0)
+	    goto done;
+	fclose(f);
+	f = NULL;
+    }
+    
     if (cligen_callback_str2fn(self->pt, CLIgen_str2fn, self) < 0)     
 	goto done;
 
@@ -97,6 +117,8 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
     retval = 0;
 
  done:
+    if (f)
+	fclose(f);
     if (globals_vec)
 	cvec_free(globals_vec);
     if (retval != 0 && self->pt.pt_vec != NULL)
@@ -140,10 +162,11 @@ test(ParseTree *self, PyObject *args, PyObject *kwds)
 {
     char *file = NULL;
     char *syntax = NULL;
+    PyObject *me;
 
-    static char *kwlist[] = {"syntax", "file", NULL};
+    static char *kwlist[] = {"me", "syntax", "file", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ss", kwlist, &syntax, &file))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|ss",  kwlist, &me, &syntax, &file))
 	return NULL;
 
 
