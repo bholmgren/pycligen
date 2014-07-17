@@ -1,3 +1,23 @@
+#
+#  PyCLIgen module
+#
+# Copyright (C) 2014 Benny Holmgren
+#
+#  This file is part of PyCLIgen.
+#
+#  PyPyCLIgen is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  PyCLIgen is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with PyCLIgen; see the file LICENSE.
+
 import sys
 import ipaddress
 import _cligen
@@ -26,6 +46,10 @@ def cv_parse(str, type, name=None):
     return cv
         
 
+
+class CLIgenSyntaxError(SyntaxError):
+    """CLIgen syntax parsing error."""
+
 #
 # CLIgen
 #
@@ -33,18 +57,49 @@ class CLIgen (_cligen.CLIgen):
     'The CLIgen class'
 
     def __init__(self, *args, **kwargs):
-        if len(kwargs) == 1:
-            if "file" in kwargs:
-                with open(kwargs['file'], 'r') as f:
-                    self.syntax = f.read()
-            elif "string" in kwargs:
-                self.syntax = kwargs['string']
-            else:
-                raise AttributeError("Argument named 'string' or 'file' expected")
-            super().__init__(self.syntax)
+        """
+    Args:
+       None
+        or
+       syntax-spec:  An optional argument specifying a CLIgen syntax format
+                     that will be parsed and activated. The specification can 
+                     be provided as a normal string format or as named 
+                     arguments containing the specification or a filename of
+                     a file containing the specification. For example:
 
-        else:
-            super().__init__()
+                       syntax='myvar="myval";\nhello-world("Greet the world");'
+
+                       file='/usr/local/myapp/myapp.cli'
+
+    Raises:
+        TypeError:          If invalid arguments are provided.
+        MemoryError:        If memory allcoation fails
+        CLIgenSyntaxError:  If CLIgen fails to parse syntax specification
+
+    """
+        numargs = len(args) + len(kwargs)
+        if numargs > 1:
+            raise TypeError("function takes at most 1 argument ({:d} given)".format(numargs))
+
+        # Call parent to setup CLIgen structures.
+        super().__init__(*args, **kwargs)
+
+        if numargs is 1:
+            if len(kwargs) > 0: # named argument
+                if "file" in kwargs:
+                    pt = ParseTree(self, file=kwargs['file'])
+                elif "syntax" in kwargs:
+                    pt = ParseTree(self, syntax=kwargs['syntax'])
+                else:
+                    raise TypeError("'{:s}' is an invalid keyword argument for this function".format(list(kwargs.keys())[0]))
+                
+                
+            elif len(args) > 0:
+                pt = ParseTree(self, syntax=args[0])
+
+            if pt:
+                self.tree_add("__CLIgen__", pt)
+                self.tree_active_set("__CLIgen__")
 
 
     def _cligen_cb(self, name, vr, arg):
