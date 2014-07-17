@@ -1,5 +1,5 @@
 /* 
- * py_cligen_cv.c
+ * pycligen_cv.c
  *
  * Copyright (C) 2014 Benny Holmgren
  *
@@ -16,7 +16,7 @@
  *  GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along wth PyCLIgen; see the file COPYING.  If not, see
+ * along wth PyCLIgen; see the file LICENSE.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
 
@@ -25,7 +25,7 @@
 
 #include <cligen/cligen.h>
 
-#include "py_cligen_cv.h"
+#include "pycligen_cv.h"
 
 
 #if 0
