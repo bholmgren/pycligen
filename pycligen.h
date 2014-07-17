@@ -39,5 +39,7 @@ typedef struct _CLIgen {
 } CLIgen;
 
 cg_fnstype_t *CLIgen_str2fn(char *name, void *arg, char **error);
+expand_cb *CLIgen_expand_str2fn(char *name, void *arg, char **error);
+
 
 #endif /* __PY_CLIGEN_H__ */

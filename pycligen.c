@@ -99,6 +99,103 @@ CLIgen_str2fn(char *name, void *arg, char **error)
     return CLIgen_callback;
 }
 
+int
+CLIgen_expand_cb(CLIgen_handle *h, char *func, cvec *vars, cg_var *arg, 
+	      int  *nr,
+	      char ***commands,     /* vector of function strings */
+	      char ***helptexts)   /* vector of help-texts */
+{
+    int num;
+    int i;
+    CLIgen_handle ch = (CLIgen_handle)h;
+    PyObject *self = (PyObject *)ch->ch_self;
+    PyObject *Value = NULL;
+    PyObject *Cvec = NULL;
+    int retval = -1;
+    PyObject *Arg = NULL;
+    PyObject *iterator;
+    PyObject *item;
+
+
+    *nr = 0;
+
+    /* Get a Cvec instance */
+    if ((Cvec = Cvec_from_cvec(self, vars)) == NULL) {
+	fprintf(stderr, "Failed to create CLIgen.Cvec instance\n"); /* XXX */
+	return -1;
+    }
+    
+    /* arg */
+    if (arg)
+	Arg = (PyObject *)CgVar_InstanceFromCv(arg);
+    else {
+	Py_INCREF(Py_None);
+	Arg = Py_None;
+    }
+    
+    Value = PyObject_CallMethod(self, "_cligen_expand", "sOO", func, Cvec, Arg);
+    if (Value == NULL)
+	goto done;
+    
+    num = PyList_Size(Value);
+    *commands = calloc(num, sizeof(char *));
+    *helptexts = calloc(num, sizeof(char *));
+    if (*commands == NULL || *helptexts == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "calloc");
+        goto done;
+    }
+    
+    if ((iterator = PyObject_GetIter(Value)) == NULL) {
+	PyErr_SetString(PyExc_ValueError, "get_iter");
+	goto done;
+    }
+
+    i = 0;
+    while ((item = PyIter_Next(iterator))) {
+	if (PyDict_Check(item)) {
+	    PyObject *cmd = PyDict_GetItemString(item, "command");
+	    PyObject *hlp = PyDict_GetItemString(item, "help");
+	    if (cmd && hlp) {
+		PyObject* strobj; 
+		char *str;
+
+		strobj = PyUnicode_AsUTF8String(cmd);
+		str = PyBytes_AsString(strobj);
+		(*commands)[i] = strdup(str);
+		Py_DECREF(strobj);
+
+		strobj = PyUnicode_AsUTF8String(hlp);
+		str = PyBytes_AsString(strobj);
+		(*helptexts)[i] = strdup(str);
+		Py_DECREF(strobj);
+
+		i++;
+	    }
+	}
+	Py_DECREF(item); 	/* release reference when done */
+    }
+    Py_DECREF(iterator);
+    
+    if (PyErr_Occurred()) {
+	PyErr_SetString(PyExc_ValueError, "get_iter");
+	goto done;
+    }
+
+    *nr = i;
+    retval = 0;
+done:
+    Py_XDECREF(Arg);
+    Py_XDECREF(Cvec);
+    Py_XDECREF(Value);
+    
+    return retval;
+}
+
+expand_cb *
+CLIgen_expand_str2fn(char *name, void *arg, char **error)
+{
+    return CLIgen_expand_cb;
+}
 
 
 static void

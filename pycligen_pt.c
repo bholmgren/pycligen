@@ -107,16 +107,19 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
     if (cligen_callback_str2fn(self->pt, CLIgen_str2fn, self) < 0)     
 	goto done;
 
+    if (cligen_expand_str2fn(self->pt, CLIgen_expand_str2fn, self) < 0)
+        goto done;
+    
     /* Populate globals dictionary */
     for (cv = NULL; (cv = cvec_each(globals_vec, cv)); ) {
 	if (PyDict_SetItemString(self->globals, cv_name_get(cv), 
 				 PyUnicode_FromString(cv_string_get(cv))) < 0)
 	    goto done;
     }
-
+    
     retval = 0;
 
- done:
+done:
     if (f)
 	fclose(f);
     if (globals_vec)

@@ -154,6 +154,11 @@ def unknown(cgen, vars, arg):
 #    return cli_expand_cb;
 #}
 
+def interface(cgen, func, cvec, arg):
+    return [ { 'command':'eth0', 'help':'Interface eth0' }, 
+             { 'command':'eth1', 'help':'Interface eth1' } 
+           ]
+
 
 
 def usage(argv):

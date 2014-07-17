@@ -110,6 +110,12 @@ class CLIgen (_cligen.CLIgen):
             return getattr(sys.modules['__main__'], name)(self, vr, arg)
         return None
 
+    def _cligen_expand(self, name, vr, arg):
+
+        if hasattr(sys.modules['__main__'], name) is True:
+            return getattr(sys.modules['__main__'], name)(self, name, vr, arg)
+        return None
+
 
 
 #
