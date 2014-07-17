@@ -17,7 +17,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with PyCLIgen; see the file COPYING.
+#  along with PyCLIgen; see the file LICENSE.
 
 import sys, getopt
 from cligen import *
@@ -44,7 +44,7 @@ def cb(cgen, vars, arg):
                 str(cv)))
     
     if arg is not None:
-        print('argument: {:s}'.format(str(arg)))
+        print('\targument: {:s}'.format(str(arg)))
 
     return 0
 
@@ -157,15 +157,16 @@ def unknown(cgen, vars, arg):
 
 
 def usage(argv):
-    print('Usage: {:s} [-h][-f <filename>]'.format(sys.argv[0]))
+    print('Usage: {:s} [-h][-f <filename>][-s <syntax>]'.format(sys.argv[0]))
     sys.exit(2)
 
     
 
 def main(argv):
-    infile = ''
+    syntax = None
+    infile = None
     try:
-        opts, args = getopt.getopt(argv,"hf:")
+        opts, args = getopt.getopt(argv,"hf:s:")
     except getopt.GetoptError:
         usage(argv)
 
@@ -173,23 +174,35 @@ def main(argv):
       if opt == '-h':
           usage(argv)
           sys.exit()
+      elif opt in ("-s"):
+         syntax = arg
       elif opt in ("-f"):
          infile = arg
 
-    c = CLIgen(file=infile)
-    if 'prompt' in c.globals():
-        c.prompt_set(c.globals()['prompt'])
-    if 'comment' in c.globals():
-        c.comment_set(c.globals()['comment'])
-    if 'tabmode' in c.globals():
-        c.tabmode_set(int(c.globals()['tabmode']))
+    c = CLIgen()
+    if syntax is not None:
+        pt = ParseTree(c, syntax=syntax)
+    elif infile is not None:
+        pt = ParseTree(c, file=infile)
+    else:
+        usage(argv)
 
-#    treename = cvec_find_str(globals, "name");
-#    cligen_tree_active_set(h, treename?treename:"tutorial");
-#    cligen_tree_add(h, cligen_tree_active(h), pt); 
-#    printf("Syntax:\n");
-#    cligen_print(stdout, pt, 0);
-#    fflush(stdout);
+    if 'prompt' in pt.globals():
+        c.prompt_set(pt.globals()['prompt'])
+    if 'comment' in pt.globals():
+        c.comment_set(pt.globals()['comment'])
+    if 'tabmode' in pt.globals():
+        c.tabmode_set(int(pt.globals()['tabmode']))
+
+    try:
+        treename = pt.globals()['name']
+    except KeyError:
+        treename = 'tutorial'
+    c.tree_add(treename, pt)
+    c.tree_active_set(treename)
+
+    print('Syntax:')
+    pt.print(sys.stdout)
 
 #    if (cligen_expand_str2fn(pt, str2fn_exp, NULL) < 0)
 #        return -1;
