@@ -32,6 +32,47 @@
 
 #define CLIgen_MAGIC  0x8abe91a1
 
+struct _CLIgen;
+
+typedef struct {
+    int                      ch_magic;    /* magic (HDR)*/
+    struct _CLIgen	    *ch_self;
+    cligen_handle            ch_cligen;   /* cligen handle */
+} *CLIgen_handle;
+
+
+typedef struct _CLIgen {
+    PyObject_HEAD
+    CLIgen_handle handle;
+    PyObject *ptlist;	/* List of ParseTrees added */
+} CLIgen;
+
+
+
+
+/*
+ * Convert a Unicode string into a malloc:ed char*
+ */
+char *
+UnicodAsString(PyObject *obj)
+{
+    char *str;
+    char *retval = NULL;
+    PyObject *strobj = NULL;
+    
+    if ((strobj = PyUnicode_AsUTF8String(obj)) == NULL)
+	return NULL;
+
+    if ((str = PyBytes_AsString(strobj)) == NULL)
+	goto done;
+
+    retval = strdup(str);
+done:
+    Py_XDECREF(strobj);
+    
+    return retval;	
+}
+
 static CLIgen_handle
 CLIgen_handle_init()
 {
@@ -100,22 +141,23 @@ CLIgen_str2fn(char *name, void *arg, char **error)
 }
 
 int
-CLIgen_expand_cb(CLIgen_handle *h, char *func, cvec *vars, cg_var *arg, 
+CLIgen_expand_cb(cligen_handle *h, char *func, cvec *vars, cg_var *arg, 
 	      int  *nr,
 	      char ***commands,     /* vector of function strings */
 	      char ***helptexts)   /* vector of help-texts */
 {
     int num;
     int i;
+    int retval = -1;
     CLIgen_handle ch = (CLIgen_handle)h;
     PyObject *self = (PyObject *)ch->ch_self;
     PyObject *Value = NULL;
     PyObject *Cvec = NULL;
-    int retval = -1;
     PyObject *Arg = NULL;
-    PyObject *iterator;
-    PyObject *item;
-
+    PyObject *iterator = NULL;
+    PyObject *item = NULL;
+    PyObject *cmd = NULL;
+    PyObject *hlp = NULL;
 
     *nr = 0;
 
@@ -136,58 +178,71 @@ CLIgen_expand_cb(CLIgen_handle *h, char *func, cvec *vars, cg_var *arg,
     Value = PyObject_CallMethod(self, "_cligen_expand", "sOO", func, Cvec, Arg);
     if (Value == NULL)
 	goto done;
-    
+    if (!PyList_Check(Value))
+	goto done;
+
     num = PyList_Size(Value);
     *commands = calloc(num, sizeof(char *));
     *helptexts = calloc(num, sizeof(char *));
     if (*commands == NULL || *helptexts == NULL) {
-        PyErr_SetString(PyExc_MemoryError, "calloc");
-        goto done;
+	PyErr_SetString(PyExc_MemoryError, "calloc");
+	goto done;
     }
     
     if ((iterator = PyObject_GetIter(Value)) == NULL) {
 	PyErr_SetString(PyExc_ValueError, "get_iter");
 	goto done;
     }
-
+    
     i = 0;
     while ((item = PyIter_Next(iterator))) {
-	if (PyDict_Check(item)) {
-	    PyObject *cmd = PyDict_GetItemString(item, "command");
-	    PyObject *hlp = PyDict_GetItemString(item, "help");
-	    if (cmd && hlp) {
-		PyObject* strobj; 
-		char *str;
-
-		strobj = PyUnicode_AsUTF8String(cmd);
-		str = PyBytes_AsString(strobj);
-		(*commands)[i] = strdup(str);
-		Py_DECREF(strobj);
-
-		strobj = PyUnicode_AsUTF8String(hlp);
-		str = PyBytes_AsString(strobj);
-		(*helptexts)[i] = strdup(str);
-		Py_DECREF(strobj);
-
-		i++;
-	    }
-	}
-	Py_DECREF(item); 	/* release reference when done */
+	cmd = hlp = NULL;
+	if (!PyDict_Check(item))
+	    goto done;
+	if ((cmd = PyDict_GetItemString(item, "command")) == NULL)
+	    goto done;
+	if (((*commands)[i] = UnicodAsString(cmd)) == NULL)
+	    goto done;
+	if ((hlp = PyDict_GetItemString(item, "help")) == NULL)
+	    goto done;
+	if (((*helptexts)[i] = UnicodAsString(cmd)) == NULL)
+	    goto done;
+	hlp = cmd = NULL;
+	i++;
+	Py_DECREF(item); 	/* iterator item ref must be released */
+	item = NULL;
     }
     Py_DECREF(iterator);
-    
+    iterator = NULL;
+
     if (PyErr_Occurred()) {
 	PyErr_SetString(PyExc_ValueError, "get_iter");
 	goto done;
     }
-
+    
     *nr = i;
     retval = 0;
 done:
+    if (retval != 0) {
+	for(i = 0; i < num; i++) {
+	    if ((*commands) && (*commands)[i])
+		free((*commands)[i]);
+	    if ((*helptexts) && (*helptexts)[i])
+		free((*helptexts)[i]);
+	}
+	free(*commands);
+	free(*helptexts);
+	*commands = *helptexts = NULL;
+	*nr = 0;
+    }
     Py_XDECREF(Arg);
     Py_XDECREF(Cvec);
     Py_XDECREF(Value);
-    
+    Py_XDECREF(cmd);
+    Py_XDECREF(hlp);
+    Py_XDECREF(item);
+    Py_XDECREF(iterator);
+
     return retval;
 }
 
@@ -478,7 +533,7 @@ static PyMethodDef CLIgen_methods[] = {
    {NULL}  /* Sentinel */
 };
 
-PyTypeObject CLIgenType = {
+PyTypeObject CLIgen_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_cligen.CLIgen",          /* tp_name */
     sizeof(CLIgen),            /* tp_basicsize */
@@ -541,11 +596,11 @@ PyInit__cligen(void)
     if (m == NULL)
         return NULL;
 
-    if (PyType_Ready(&CLIgenType) < 0)
+    if (PyType_Ready(&CLIgen_Type) < 0)
         return NULL;
 
-    Py_INCREF(&CLIgenType);
-    PyModule_AddObject(m, "CLIgen", (PyObject *)&CLIgenType);
+    Py_INCREF(&CLIgen_Type);
+    PyModule_AddObject(m, "CLIgen", (PyObject *)&CLIgen_Type);
 
 
     if (cgv_init_object(m) < 0)
@@ -557,3 +612,16 @@ PyInit__cligen(void)
 
     return m;
 }
+
+
+cligen_handle
+CLIgen_cligen_handle(PyObject *obj)
+{
+    if ( ! PyObject_TypeCheck(obj, &CLIgen_Type)) {
+	PyErr_SetString(PyExc_ValueError, "Object not CLIgen type");
+	return NULL;
+    }
+
+    return ((CLIgen *)obj)->handle->ch_cligen;
+}
+
