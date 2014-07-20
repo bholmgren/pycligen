@@ -113,8 +113,12 @@ class CLIgen (_cligen.CLIgen):
     def _cligen_expand(self, name, vr, arg):
 
         if hasattr(sys.modules['__main__'], name) is True:
-            return getattr(sys.modules['__main__'], name)(self, name, vr, arg)
-        return None
+            cmds = getattr(sys.modules['__main__'], name)(self, name, vr, arg)
+            if type(cmds) != list:
+                raise TypeError("expand callback must return list of dicts")    
+            return cmds
+        else:
+            return None
 
 
 
