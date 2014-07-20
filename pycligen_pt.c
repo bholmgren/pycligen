@@ -55,7 +55,7 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
     FILE *f = NULL;
     char *file = NULL;
     char *syntax = NULL;
-    CLIgen *cgen;
+    PyObject *cgen;
     cvec *globals_vec = NULL;
     int retval = -1;
     cg_var *cv;
@@ -63,7 +63,7 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
 
     static char *kwlist[] = {"CLIgen", "syntax", "file", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|ss", kwlist, (PyObject *)&cgen, &syntax, &file))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|ss", kwlist, &cgen, &syntax, &file))
 	return -1;
     
     memset(&self->pt, 0, sizeof(self->pt));
@@ -74,7 +74,7 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
 	goto done;
 
     if (syntax != NULL) {
-	if (cligen_parse_str(cgen->handle->ch_cligen,
+	if (cligen_parse_str(CLIgen_cligen_handle(cgen),
 			     syntax,
 			     "__syntax__",
 			     &self->pt,
@@ -94,7 +94,7 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
 		goto done;
 	    }
 	}
-	if (cligen_parse_file(cgen->handle->ch_cligen,
+	if (cligen_parse_file(CLIgen_cligen_handle(cgen),
 			      f,
 			      file,
 			      &self->pt,
