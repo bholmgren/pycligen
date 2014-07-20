@@ -23,23 +23,9 @@
 #ifndef __PY_CLIGEN_H__
 #define __PY_CLIGEN_H__
 
-struct _CLIgen;
-
-typedef struct {
-    int                      ch_magic;    /* magic (HDR)*/
-    struct _CLIgen	    *ch_self;
-    cligen_handle            ch_cligen;   /* cligen handle */
-} *CLIgen_handle;
-
-
-typedef struct _CLIgen {
-    PyObject_HEAD
-    CLIgen_handle handle;
-    PyObject *ptlist;	/* List of ParseTrees added */
-} CLIgen;
-
 cg_fnstype_t *CLIgen_str2fn(char *name, void *arg, char **error);
 expand_cb *CLIgen_expand_str2fn(char *name, void *arg, char **error);
 
+extern cligen_handle CLIgen_cligen_handle(PyObject *cgen);
 
 #endif /* __PY_CLIGEN_H__ */
