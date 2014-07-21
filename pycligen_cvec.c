@@ -25,6 +25,7 @@
 
 #include <cligen/cligen.h>
 
+#include "pycligen.h"
 #include "pycligen_cv.h"
 
 
@@ -44,7 +45,8 @@ Cvec_from_cvec(PyObject *self, cvec *vr)
  
     /* Find class object */
     
-    if ((Name = PyUnicode_FromString("cligen")) == NULL)
+    Name = StringFromString("cligen");
+    if (Name == NULL)
 	return NULL;
     Cls = PyImport_Import(Name);
     Py_DECREF(Name);
