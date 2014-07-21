@@ -18,6 +18,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with PyCLIgen; see the file LICENSE.
 
+# Make python2 behave more like python 3.
+from __future__ import unicode_literals, absolute_import, print_function
+
 import sys
 import ipaddress
 import _cligen
@@ -82,7 +85,7 @@ class CLIgen (_cligen.CLIgen):
             raise TypeError("function takes at most 1 argument ({:d} given)".format(numargs))
 
         # Call parent to setup CLIgen structures.
-        super().__init__(*args, **kwargs)
+        super(CLIgen, self).__init__(*args, **kwargs)
 
         if numargs is 1:
             if len(kwargs) > 0: # named argument
@@ -141,7 +144,7 @@ class CgVar (_cligen.CgVar):
         TypeError:  If the CgVar object is not of the types CGV_IPV4ADDR
                     of CGV_IPV4PFX.
     """
-        return ipaddress.IPv4Address(super()._ipv4addr_get())
+        return ipaddress.IPv4Address(super(CgVar, self)._ipv4addr_get())
 
 
  
@@ -158,7 +161,7 @@ class CgVar (_cligen.CgVar):
         TypeError:  If the CgVar object is not of the types CGV_IPV4ADDR
                     of CGV_IPV4PFX.
     """
-        return super()._ipv4masklen_get()
+        return super(CgVar, self)._ipv4masklen_get()
 
 
 #    def ipv4addr_set(self, addr):
@@ -214,7 +217,7 @@ class CgVar (_cligen.CgVar):
         TypeError:  If the CgVar object is not of the types CGV_IPV6ADDR
                     of CGV_IPV6PFX.
     """
-        return ipaddress.IPv6Address(super()._ipv6addr_get())
+        return ipaddress.IPv6Address(super(CgVar, self)._ipv6addr_get())
 
 
     def ipv6masklen_get(self):
@@ -230,7 +233,7 @@ class CgVar (_cligen.CgVar):
         TypeError:  If the CgVar object is not of the types CGV_IPV6ADDR
                     of CGV_IPV6PFX.
     """
-        return super()._ipv6masklen_get()
+        return super(CgVar, self)._ipv6masklen_get()
 
 
 
@@ -379,7 +382,7 @@ class Cvec ():
 #  file='<filename>'        - Argument specifies a file containing CLIgen syntax.
 #If argument is unnamed, itinplies a "string" argument.
 #"""
-##        super().__init__(*args, **kwargs)
+##        super(ParseTree, self).__init__(*args, **kwargs)
 #        if len(kwargs) == 1:
 #            if "file" in kwargs:
 #                with open(kwargs['file'], 'r') as f:
