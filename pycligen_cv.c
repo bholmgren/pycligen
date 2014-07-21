@@ -20,16 +20,16 @@
  * <http://www.gnu.org/licenses/>.
  */
 
+#include <Python.h>
+#include "structmember.h"
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <Python.h>
-#include "structmember.h"
-
 #include <cligen/cligen.h>
 
-#include "pycligen_cv.h"
+#include "pycligen.h"
 
 
 typedef struct {
@@ -66,6 +66,7 @@ CgVar_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 CgVar_init(CgVar *self, PyObject *args, PyObject *kwds)
 {
+    char *str;
     int type = CGV_ERR;
     PyObject *name = NULL;
 
@@ -76,14 +77,12 @@ CgVar_init(CgVar *self, PyObject *args, PyObject *kwds)
         return -1;
 
     cv_type_set(self->cv, type);
-    if (name) {
-	PyObject* strobj = PyUnicode_AsUTF8String(name);
-	char *namestr = PyBytes_AsString(strobj);
-	if (cv_name_set(self->cv, namestr) == NULL) {
-	    Py_DECREF(strobj);
+    if (name && (str = StringAsString(name)) != NULL) {
+	if (cv_name_set(self->cv, str) == NULL) {
+	    free(str);
 	    return -1;
 	}
-	Py_DECREF(strobj);
+	free(str);
     }
     return 0;
 }
@@ -100,7 +99,7 @@ CgVar_repr(PyObject *self)
         return NULL;
     }
     
-    ob = PyUnicode_FromString(str);
+    ob = StringFromString(str);
     free(str);
     
     return ob;
@@ -133,7 +132,7 @@ CgVar_name_get(CgVar *self)
     if (str == NULL)
 	Py_RETURN_NONE;
     
-    return PyUnicode_FromString(str);
+    return StringFromString(str);
 }
 
 static PyObject *
@@ -151,7 +150,7 @@ CgVar_name_set(CgVar *self, PyObject *args)
         return NULL;
     }
     
-    return PyUnicode_FromString(str);
+    return StringFromString(str);
 }
 
 static PyObject *
@@ -202,7 +201,7 @@ CgVar_type2str(CgVar *self, PyObject *args)
     if (type == CGV_ERR)
 	type = cv_type_get(self->cv);    
 
-    return PyUnicode_FromString(cv_type2str(type));
+    return StringFromString(cv_type2str(type));
 }
 
 static PyObject *
@@ -294,7 +293,7 @@ CgVar_string_get(CgVar *self)
     if (str == NULL)
 	Py_RETURN_NONE;
     
-    return PyUnicode_FromString(str);
+    return StringFromString(str);
 }
 
 static PyObject *
@@ -313,7 +312,7 @@ CgVar_string_set(CgVar *self, PyObject *args)
         return NULL;
     }
     
-    return PyUnicode_FromString(str);
+    return StringFromString(str);
 }
 
 static PyObject *
@@ -331,7 +330,7 @@ _CgVar_ipv4addr_get(CgVar *self)
     if ((addr = cv_ipv4addr_get(self->cv)) == NULL)
 	Py_RETURN_NONE;
     
-    return PyUnicode_FromString(inet_ntop(AF_INET, addr, addrp, INET_ADDRSTRLEN));
+    return StringFromString(inet_ntop(AF_INET, addr, addrp, INET_ADDRSTRLEN));
 }
 
 static PyObject *
@@ -385,7 +384,7 @@ _CgVar_ipv6addr_get(CgVar *self)
     if ((addr = cv_ipv6addr_get(self->cv)) == NULL)
 	Py_RETURN_NONE;
     
-    return PyUnicode_FromString(inet_ntop(AF_INET6, addr, addrp, INET6_ADDRSTRLEN));
+    return StringFromString(inet_ntop(AF_INET6, addr, addrp, INET6_ADDRSTRLEN));
 }
 
 static PyObject *
@@ -441,13 +440,13 @@ CgVar_mac_get(CgVar *self)
 	     m[4],
 	     m[5]);
 
-    return PyUnicode_FromString(mac);
+    return StringFromString(mac);
 }
 
 static PyObject *
 CgVar_uuid_get(CgVar *self)
 {
-    return PyUnicode_FromString("not implemented");
+    return StringFromString("not implemented");
 }
 
 static PyObject *
