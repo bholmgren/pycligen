@@ -32,7 +32,7 @@ AC_DEFINE(PYCLIGEN_MAJOR_VERSION, pycligen_major_version, [pycligen major versio
 AC_DEFINE(PYCLIGEN_MINOR_VERSION, pycligen_minor_version, [pycligen minor version])
 
 AC_CONFIG_SRCDIR([./pycligen.c])
-AC_CONFIG_HEADER(pycligen_config.h)
+#AC_CONFIG_HEADER(pycligen_config.h)
 PKG_PROG_PKG_CONFIG
 AC_CANONICAL_TARGET
 AC_DEFINE(AUTOCONF)
