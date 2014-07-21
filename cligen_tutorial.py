@@ -28,26 +28,26 @@ from cligen import *
 def hello(cgen, vars, arg):
     'This callback just prints the function argument'
 
-    print(arg)
+    print (arg)
     return 0
     
 
 def cb(cgen, vars, arg):
     'This is a generic callback printing the variable vector and argument'
 
-    print('variables:');
+    print ('variables:');
     for i, cv in enumerate(vars):
         name = cv.name_get()
         if name is None:
             name = "(null)"
-        print('\t{:d} name:{:s} type:{:s} value:{:s}'.format(
+        print ('\t{:d} name:{:s} type:{:s} value:{:s}'.format(
                 i, 
                 name,
                 cv.type2str(),
                 str(cv)))
     
     if arg is not None:
-        print('\targument: {:s}'.format(str(arg)))
+        print ('\targument: {:s}'.format(str(arg)))
 
     return 0
 
@@ -56,15 +56,15 @@ def letters(cgen, vars, arg):
     'An example of a callback handling a complex syntax'
 
     if vars.haskey('ca'):
-        print(vars['ca'])
+        print (vars['ca'])
     if vars.haskey('int'):
-        print(vars['int'])
+        print (vars['int'])
     if vars.haskey('cb'):
-        print(vars['cb'])
+        print (vars['cb'])
     if vars.haskey('dd'):
-        print(vars['dd'])
+        print (vars['dd'])
     if vars.haskey('ee'):
-        print(vars['ee'])
+        print (vars['ee'])
 
 
 
@@ -72,7 +72,7 @@ def letters(cgen, vars, arg):
 def secret(cgen, vars, arg):
     'This callback changes the prompt to the variable setting'
 
-    print('This is a hidden command: {:s}'.format(str(arg)))
+    print ('This is a hidden command: {:s}'.format(str(arg)))
     return 0;
 
 
@@ -97,7 +97,7 @@ def Quit(cgen, vars, arg):
 def unknown(cgen, vars, arg):
     'Command without assigned callback'
     
-    print('The command has no assigned callback: {:d}'.format(vars[0]))
+    print ('The command has no assigned callback: {:d}'.format(vars[0]))
     return 0;
 
 
@@ -109,7 +109,7 @@ def interface(cgen, func, cvec, arg):
 
 
 def usage(argv):
-    print('Usage: {:s} [-h][-f <filename>][-s <syntax>]'.format(sys.argv[0]))
+    print ('Usage: {:s} [-h][-f <filename>][-s <syntax>]'.format(sys.argv[0]))
     sys.exit(2)
 
     
@@ -153,8 +153,8 @@ def main(argv):
     c.tree_add(treename, pt)
     c.tree_active_set(treename)
 
-    print('Syntax:')
-    pt.print(sys.stdout)
+    print ('Syntax:')
+    print(pt)
 
     c.eval()
 
