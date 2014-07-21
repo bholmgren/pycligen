@@ -74,7 +74,7 @@ done:
 }
 
 static CLIgen_handle
-CLIgen_handle_init()
+CLIgen_handle_init(void)
 {
     CLIgen_handle h;
     
@@ -146,8 +146,8 @@ CLIgen_expand_cb(cligen_handle *h, char *func, cvec *vars, cg_var *arg,
 	      char ***commands,     /* vector of function strings */
 	      char ***helptexts)   /* vector of help-texts */
 {
-    int num;
     int i;
+    int num;
     int retval = -1;
     CLIgen_handle ch = (CLIgen_handle)h;
     PyObject *self = (PyObject *)ch->ch_self;
@@ -588,8 +588,7 @@ PyMODINIT_FUNC
 PyInit__cligen(void)
 {
     PyObject* m;
-    int cgv_init_object(PyObject *m);
-    int cvec_init_object(PyObject *m);
+    int CgVar_init_object(PyObject *m);
     int ParseTree_init_object(PyObject *m);
 
     m = PyModule_Create(&cligenmodule);
@@ -603,9 +602,7 @@ PyInit__cligen(void)
     PyModule_AddObject(m, "CLIgen", (PyObject *)&CLIgen_Type);
 
 
-    if (cgv_init_object(m) < 0)
-	return NULL;
-    if (cvec_init_object(m) < 0)
+    if (CgVar_init_object(m) < 0)
 	return NULL;
     if (ParseTree_init_object(m) < 0)
 	return NULL;
