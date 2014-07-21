@@ -23,13 +23,6 @@
 #ifndef _PY_CLIGEN_CVEC_H_
 #define _PY_CLIGEN_CVEC_H_
 
-#if 0
-typedef struct {
-    PyObject_HEAD
-    cvec *vr;
-} Cvec;
-#endif
-
 PyObject *Cvec_from_cvec(PyObject *self, cvec *vr);
 
 #endif /* _PY_CLIGEN_CVEC_H_ */
