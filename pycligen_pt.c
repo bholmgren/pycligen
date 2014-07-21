@@ -20,8 +20,6 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <errno.h>
 #include <Python.h>
 #include "structmember.h"
 
@@ -113,7 +111,7 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
     /* Populate globals dictionary */
     for (cv = NULL; (cv = cvec_each(globals_vec, cv)); ) {
 	if (PyDict_SetItemString(self->globals, cv_name_get(cv), 
-				 PyUnicode_FromString(cv_string_get(cv))) < 0)
+				 StringFromString(cv_string_get(cv))) < 0)
 	    goto done;
     }
     
@@ -139,7 +137,34 @@ ParseTree_globals(ParseTree *self)
 
 
 static PyObject *
-ParseTree_print(ParseTree *self, PyObject *args)
+ParseTree_repr(PyObject *self)
+{
+    FILE *f;
+    PyObject *str;
+    char *buf;
+    size_t siz;
+
+    if ((f = open_memstream(&buf, &siz)) == NULL) {
+	PyErr_Format(PyExc_IOError, "%s", strerror(errno));
+	return NULL;
+    }
+
+    cligen_print(f, ((ParseTree *)self)->pt, 1); 
+    fclose(f);
+    if (buf) {
+	str = StringFromString(buf);
+	free(buf);
+
+    } else {
+	Py_INCREF(Py_None);
+	str = Py_None;
+    }    
+    
+    return str;    
+}
+
+static PyObject *
+ParseTree_fprint(ParseTree *self, PyObject *args)
 {
     FILE *f;
     int fd;
@@ -187,9 +212,11 @@ static PyMethodDef ParseTree_methods[] = {
      "Get dictionary of ParseTree global variables"
     },
 
-    {"print", (PyCFunction)ParseTree_print, METH_VARARGS, 
+#if 0
+    {"print", (PyCFunction)ParseTree_fprint, METH_VARARGS, 
      "Print CLIgen parse-tree to file, brief or detailed."
     },
+#endif
 
     {"TEST", (PyCFunction)test, METH_VARARGS | METH_KEYWORDS,
      "test"
@@ -208,13 +235,13 @@ PyTypeObject ParseTree_Type = {
     0,                         /* tp_getattr */
     0,                         /* tp_setattr */
     0,                         /* tp_reserved */
-    0,                         /* tp_repr */
+    ParseTree_repr,            /* tp_repr */
     0,                         /* tp_as_number */
     0,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
     0,                         /* tp_hash  */
     0,                         /* tp_call */
-    0,                         /* tp_str */
+    ParseTree_repr,            /* tp_str */
     0,                         /* tp_getattro */
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
