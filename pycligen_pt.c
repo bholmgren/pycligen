@@ -163,6 +163,7 @@ ParseTree_repr(PyObject *self)
     return str;    
 }
 
+#if 0
 static PyObject *
 ParseTree_fprint(ParseTree *self, PyObject *args)
 {
@@ -184,6 +185,7 @@ ParseTree_fprint(ParseTree *self, PyObject *args)
     
     return PyLong_FromLong(0);
 }
+#endif
 
 static PyObject *
 test(ParseTree *self, PyObject *args, PyObject *kwds)
