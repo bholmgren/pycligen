@@ -49,29 +49,83 @@ typedef struct _CLIgen {
 
 
 
+/*
+ * Python 2/3 support function: Convert a char* to python string
+ */
+PyObject *
+StringFromString(const char *str)
+{
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromString(str);
+#else
+    return PyString_FromString(str);
+#endif
+}
+
 
 /*
- * Convert a Unicode string into a malloc:ed char*
+ * Python 2/3 support function: Convert a python string into a malloc:ed char*
  */
 char *
-UnicodAsString(PyObject *obj)
+StringAsString(PyObject *obj)
 {
     char *str;
     char *retval = NULL;
     PyObject *strobj = NULL;
     
-    if ((strobj = PyUnicode_AsUTF8String(obj)) == NULL)
-	return NULL;
 
-    if ((str = PyBytes_AsString(strobj)) == NULL)
+#if  PY_MAJOR_VERSION >= 3
+    strobj = PyUnicode_AsUTF8String(obj);
+    if (strobj == NULL)
+	goto done; 
+    str = PyBytes_AsString(strobj);
+#else
+    str = PyString_AsString(obj);
+#endif
+    if (str == NULL)
 	goto done;
 
     retval = strdup(str);
 done:
+#if 1 /* PY_MAJOR_VERSION >= 3 */
     Py_XDECREF(strobj);
+#endif
     
     return retval;	
 }
+
+
+
+/*
+ * Python 2/3 support function: Get PyErr message as malloc:ed char*
+ */
+char *
+ErrString(int restore)
+{
+    char *str = NULL;
+    PyObject *type;
+    PyObject *value;
+    PyObject *traceback;
+    
+    if (!PyErr_Occurred())
+	return NULL;
+    
+    PyErr_Fetch(&type, &value, &traceback);
+    if (value) 
+	str = StringAsString(value);
+    
+    if (restore)
+	PyErr_Restore(type, value, traceback);
+    else {
+	Py_XDECREF(type);
+	Py_XDECREF(value);
+	Py_XDECREF(traceback);
+    }
+
+    return str;
+}
+
+
 
 static CLIgen_handle
 CLIgen_handle_init(void)
@@ -156,8 +210,8 @@ CLIgen_expand_cb(cligen_handle *h, char *func, cvec *vars, cg_var *arg,
     PyObject *Arg = NULL;
     PyObject *iterator = NULL;
     PyObject *item = NULL;
-    PyObject *cmd = NULL;
-    PyObject *hlp = NULL;
+    PyObject *cmd;
+    PyObject *hlp;
 
     *nr = 0;
 
@@ -185,7 +239,7 @@ CLIgen_expand_cb(cligen_handle *h, char *func, cvec *vars, cg_var *arg,
     *commands = calloc(num, sizeof(char *));
     *helptexts = calloc(num, sizeof(char *));
     if (*commands == NULL || *helptexts == NULL) {
-	PyErr_SetString(PyExc_MemoryError, "calloc");
+	PyErr_NoMemory();
 	goto done;
     }
     
@@ -196,18 +250,16 @@ CLIgen_expand_cb(cligen_handle *h, char *func, cvec *vars, cg_var *arg,
     
     i = 0;
     while ((item = PyIter_Next(iterator))) {
-	cmd = hlp = NULL;
 	if (!PyDict_Check(item))
 	    goto done;
 	if ((cmd = PyDict_GetItemString(item, "command")) == NULL)
 	    goto done;
-	if (((*commands)[i] = UnicodAsString(cmd)) == NULL)
+ 	if (((*commands)[i] = StringAsString(cmd)) == NULL)
 	    goto done;
 	if ((hlp = PyDict_GetItemString(item, "help")) == NULL)
 	    goto done;
-	if (((*helptexts)[i] = UnicodAsString(cmd)) == NULL)
+	if (((*helptexts)[i] = StringAsString(hlp)) == NULL)
 	    goto done;
-	hlp = cmd = NULL;
 	i++;
 	Py_DECREF(item); 	/* iterator item ref must be released */
 	item = NULL;
@@ -215,14 +267,12 @@ CLIgen_expand_cb(cligen_handle *h, char *func, cvec *vars, cg_var *arg,
     Py_DECREF(iterator);
     iterator = NULL;
 
-    if (PyErr_Occurred()) {
-	PyErr_SetString(PyExc_ValueError, "get_iter");
-	goto done;
-    }
-    
+  
     *nr = i;
     retval = 0;
 done:
+	if (PyErr_Occurred())
+	    PyErr_Print();
     if (retval != 0) {
 	for(i = 0; i < num; i++) {
 	    if ((*commands) && (*commands)[i])
@@ -238,8 +288,6 @@ done:
     Py_XDECREF(Arg);
     Py_XDECREF(Cvec);
     Py_XDECREF(Value);
-    Py_XDECREF(cmd);
-    Py_XDECREF(hlp);
     Py_XDECREF(item);
     Py_XDECREF(iterator);
 
@@ -287,19 +335,6 @@ CLIgen_init(CLIgen *self, PyObject *args, PyObject *kwds)
 }
 
 
-#if 0
-static PyObject *
-CLIgen_parse_str(CLIgen *self, PyObject *args)
-{
-    char *str;
-
-    if (!PyArg_ParseTuple(args, "s", &str))
-        return NULL;
-
-    return PyLong_FromLong(CLIgen_do_parse(self, str));
-}
-#endif
-
 static PyObject *
 _CLIgen_ptlist(CLIgen *self)
 {
@@ -311,7 +346,7 @@ _CLIgen_ptlist(CLIgen *self)
 static PyObject *
 CLIgen_prompt(CLIgen *self)
 {
-    return PyUnicode_FromString(cligen_prompt(self->handle->ch_cligen));
+    return StringFromString(cligen_prompt(self->handle->ch_cligen));
 }
 
 
@@ -332,7 +367,8 @@ CLIgen_comment(CLIgen *self)
     char c[2] = {0, 0};
 
     c[0] = cligen_comment(self->handle->ch_cligen);
-    return PyUnicode_FromString(c);
+
+    return StringFromString(c);
 }
 
 static PyObject *
@@ -393,10 +429,8 @@ CLIgen_tree_add(CLIgen *self, PyObject *args)
         return NULL;
 
     pt = ParseTree_pt(Pt);
-    if (cligen_tree_add(self->handle->ch_cligen, name, *pt) < 0) {
-        PyErr_SetString(PyExc_MemoryError, "cligen_tree_add");
-        return NULL;
-    }
+    if (cligen_tree_add(self->handle->ch_cligen, name, *pt) < 0)
+	return PyErr_NoMemory();
     
     Value =  PyObject_CallMethod(self->ptlist, "append", "O", Pt);
     Py_XDECREF(Value);
@@ -412,10 +446,8 @@ CLIgen_tree_active_set(CLIgen *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &name))
         return NULL;
 
-    if (cligen_tree_active_set(self->handle->ch_cligen, name) < 0) {
-        PyErr_SetString(PyExc_MemoryError, "failed to allocate memory");
-        return NULL;
-    }
+    if (cligen_tree_active_set(self->handle->ch_cligen, name) < 0)
+	return PyErr_NoMemory();
     
     return PyLong_FromLong(0);
 }
@@ -428,7 +460,7 @@ CLIgen_tree_active(CLIgen *self)
     if ((name = cligen_tree_active(self->handle->ch_cligen)) == NULL)
 	Py_RETURN_NONE;
 
-    return PyUnicode_FromString(name);
+    return StringFromString(name);
 }
 
 
@@ -465,13 +497,6 @@ CLIgen_eval(CLIgen *self)
 
  done:
     return PyLong_FromLong(retval);
-}
-
-
-static PyObject *
-CLIgen_print(CLIgen *self)
-{
-    Py_RETURN_NONE;
 }
 
 
@@ -512,10 +537,6 @@ static PyMethodDef CLIgen_methods[] = {
 
     {"eval", (PyCFunction)CLIgen_eval, METH_NOARGS,
      "CLIgen command evaluation loop"
-    },
-
-    {"print", (PyCFunction)CLIgen_print, METH_NOARGS,
-     "Return CLIgen syntax as a string"
     },
 
     {"tree_add", (PyCFunction)CLIgen_tree_add, METH_VARARGS,
@@ -575,39 +596,30 @@ PyTypeObject CLIgen_Type = {
     CLIgen_new,                /* tp_new */
 };
 
-static PyModuleDef cligenmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_cligen",
-    "Python bindings for cligen.",
-    -1,
-    NULL, NULL, NULL, NULL, NULL
-};
 
-
-PyMODINIT_FUNC
-PyInit__cligen(void)
+MOD_INIT(_cligen)
 {
     PyObject* m;
     int CgVar_init_object(PyObject *m);
     int ParseTree_init_object(PyObject *m);
 
-    m = PyModule_Create(&cligenmodule);
+    MOD_DEF(m, "_cligen", "Python bindings for CLIgen", CLIgen_methods);
     if (m == NULL)
-        return NULL;
-
+        return MOD_ERROR_VAL;
+    
     if (PyType_Ready(&CLIgen_Type) < 0)
-        return NULL;
+        return MOD_ERROR_VAL;
 
     Py_INCREF(&CLIgen_Type);
     PyModule_AddObject(m, "CLIgen", (PyObject *)&CLIgen_Type);
 
 
     if (CgVar_init_object(m) < 0)
-	return NULL;
+        return MOD_ERROR_VAL;
     if (ParseTree_init_object(m) < 0)
-	return NULL;
+        return MOD_ERROR_VAL;
 
-    return m;
+    return MOD_SUCCESS_VAL(m);
 }
 
 
