@@ -205,6 +205,62 @@ CgVar_type2str(CgVar *self, PyObject *args)
 }
 
 static PyObject *
+CgVar_const_get(CgVar *self)
+{
+    if (cv_const_get(self->cv))
+	Py_RETURN_TRUE;
+    else
+	Py_RETURN_FALSE;
+}
+
+static PyObject *
+CgVar_const_set(CgVar *self, PyObject *args)
+{
+    PyObject *bool;
+
+    if (!PyArg_ParseTuple(args, "O!", &PyBool_Type, &bool))
+        return NULL;
+
+    if (cv_const_set(self->cv, (bool == Py_True) ? 1 : 0))
+	Py_RETURN_TRUE;
+    else
+	Py_RETURN_FALSE;
+}
+
+static PyObject *
+CgVar_flag(CgVar *self, PyObject *args)
+{
+    unsigned char mask;
+
+    if (!PyArg_ParseTuple(args, "b", &mask))
+        return NULL;
+
+    return PyLong_FromLong(cv_flag(self->cv, mask));
+}
+
+static PyObject *
+CgVar_flag_clr(CgVar *self, PyObject *args)
+{
+    unsigned char mask;
+
+    if (!PyArg_ParseTuple(args, "b", &mask))
+        return NULL;
+
+    return PyLong_FromLong(cv_flag_clr(self->cv, mask));
+}
+
+static PyObject *
+CgVar_flag_set(CgVar *self, PyObject *args)
+{
+    unsigned char mask;
+
+    if (!PyArg_ParseTuple(args, "b", &mask))
+        return NULL;
+
+    return PyLong_FromLong(cv_flag_set(self->cv, mask));
+}
+
+static PyObject *
 CgVar_int_get(CgVar *self)
 {
     if (CgVar_type_verify(self, CGV_INT))
@@ -360,12 +416,8 @@ _CgVar_ipv4addr_set(CgVar *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O", &addr))
         return NULL;
     
-#if 1
     PyErr_SetNone(PyExc_NotImplementedError);
     return NULL;
-#else
-    Py_RETURN_NONE;
-#endif
 }
 #endif /* notimplemented */
 
@@ -411,12 +463,8 @@ _CgVar_ipv6addr_set(CgVar *self, PyObject *args)
         return NULL;
     }
     
-#if 1
     PyErr_SetNone(PyExc_NotImplementedError);
     return NULL;
-#else
-    Py_RETURN_NONE;
-#endif
 }
 #endif /* notimplemented */
 
@@ -496,7 +544,6 @@ static PyMethodDef CgVar_methods[] = {
      "Set the type of the variable"
     },
 
-#if 0
     {"const_get", (PyCFunction)CgVar_const_get, METH_NOARGS, 
      "Return the const value of the variable"
     },
@@ -504,7 +551,7 @@ static PyMethodDef CgVar_methods[] = {
      "Set the const value of the variable"
     },
  
-    {"flag_get", (PyCFunction)CgVar_flag_get, METH_NOARGS, 
+    {"flag", (PyCFunction)CgVar_flag, METH_VARARGS, 
      "Return the flag of the variable"
     },
     {"flag_set", (PyCFunction)CgVar_flag_set, METH_VARARGS, 
@@ -514,6 +561,7 @@ static PyMethodDef CgVar_methods[] = {
      "Set the flag of the variable"
     },
 
+#if 0
 #endif
     {"int_get", (PyCFunction)CgVar_int_get, METH_NOARGS, 
      "Return the int value of the variable"
@@ -662,7 +710,7 @@ CgVar_init_object(PyObject *m)
 }
 
 PyObject *
-CgVar_Instance(/*enum cv_type type, char *name*/)
+CgVar_Instance(void)
 {
     PyObject *Cv;
 
