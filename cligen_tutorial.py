@@ -4,6 +4,9 @@
 #
 # Copyright (C) 2014 Benny Holmgren
 #
+#  Translation to Python of cligen_tutorial.c included in CLIgen distribution
+#  by Olof Hagsand, https://github.com/olofhagsand/cligen.
+#
 #  This file is part of PyCLIgen.
 #
 #  PyPyCLIgen is free software; you can redistribute it and/or modify
@@ -98,62 +101,6 @@ def unknown(cgen, vars, arg):
     return 0;
 
 
-# * str2fn
-# * Example of static string to function mapper for the callback
-# * functions above.
-# * Better to use dlopen, mmap or some other more flexible scheme.
-# */
-#str2fn(char *name, void *arg, char **error)
-#{
-#    *error = NULL;
-#    if (strcmp(name, "hello") == 0)
-#        return hello;
-#    if (strcmp(name, "cb") == 0)
-#        return cb;
-#    if (strcmp(name, "letters") == 0)
-#        return letters;
-#    if (strcmp(name, "secret") == 0)
-#        return secret;
-#    if (strcmp(name, "setprompt") == 0)
-#        return setprompt;
-#    if (strcmp(name, "quit") == 0)
-#        return quit;
-#
-#    return unknown; /* allow any function (for testing) */
-#}
-
-#/*
-# * This is an example of an expansion function. It is called every time
-# * a variable of the form <expand> needs to be evaluated.
-# * Note the mallocing of vectors which could probably be done in a
-# * friendlier way.
-# * Note also that the expansion is not very dynamic, a script or reading a file
-# * would have introduced som more dynamics.
-# */
-#int
-#cli_expand_cb(void *h, char *fn_str, cvec *vars, cg_var *cv, 
-#	      int  *nr,
-#	      char ***commands,     /* vector of function strings */
-#	      char ***helptexts)   /* vector of help-texts */
-#{
-#    int n = 2;
-#     /* Interface name expansion. */
-#    *commands = calloc(n, sizeof(char*));
-#    (*commands)[0] = strdup("eth0");
-#    (*commands)[1] = strdup("eth1");
-#    *nr = n;
-#    *helptexts = calloc(n, sizeof(char*));
-#    (*helptexts)[0] = strdup("Interface A");
-#    (*helptexts)[1] = strdup("Interface B");
-#    return 0;
-#}
-#
-#static expand_cb *
-#str2fn_exp(char *name, void *arg, char **error)
-#{
-#    return cli_expand_cb;
-#}
-
 def interface(cgen, func, cvec, arg):
     return [ { 'command':'eth0', 'help':'Interface eth0' }, 
              { 'command':'eth1', 'help':'Interface eth1' } 
@@ -208,9 +155,6 @@ def main(argv):
 
     print('Syntax:')
     pt.print(sys.stdout)
-
-#    if (cligen_expand_str2fn(pt, str2fn_exp, NULL) < 0)
-#        return -1;
 
     c.eval()
 
