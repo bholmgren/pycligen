@@ -23,14 +23,12 @@
 #ifndef _PY_CLIGEN_CV_H_
 #define _PY_CLIGEN_CV_H_
 
-typedef struct {
-    PyObject_HEAD
-    cg_var *cv;
-} CgVar;
+#include <cligen/cligen.h>
 
-extern PyTypeObject CgVarType;
+extern PyTypeObject CgVar_Type;
 
-CgVar *CgVar_Instance();
-CgVar *CgVar_InstanceFromCv(cg_var *cv);
+PyObject *CgVar_Instance(void);
+PyObject *CgVar_InstanceFromCv(cg_var *cv);
+cg_var *CgVar_cv(PyObject *Cv);
 
 #endif /* _PY_CLIGEN_CV_H_ */
