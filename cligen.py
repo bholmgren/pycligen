@@ -282,15 +282,8 @@ class Cvec ():
     'A vector of CgVar'
 
     def __init__(self):
-#        print("Cvec.__init__")
         self._cvec = []
-#        super().__init__(self)
         
-#    def __del__(self):
-#        print("Cvec.__del__")
-#        del self._cvec[:]
-#        self._cvec = None  # XXX free list??
-
     def __str__(self):
 
         return self._cvec.__str__()
