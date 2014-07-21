@@ -87,7 +87,7 @@ StringAsString(PyObject *obj)
 
     retval = strdup(str);
 done:
-#if 1 /* PY_MAJOR_VERSION >= 3 */
+#if  PY_MAJOR_VERSION >= 3
     Py_XDECREF(strobj);
 #endif
     
@@ -375,11 +375,13 @@ static PyObject *
 CLIgen_comment_set(CLIgen *self, PyObject *args)
 {
     char *c;
+    char retval[2] = {0,0};
 
     if (!PyArg_ParseTuple(args, "s", &c))
         return NULL;
 
-    return PyLong_FromLong(cligen_comment_set(self->handle->ch_cligen, *c));
+    retval[0] = cligen_comment_set(self->handle->ch_cligen, *c);
+    return StringFromString(retval);
 }
 
 static PyObject *
