@@ -31,6 +31,13 @@
 
 #include "pycligen_cv.h"
 
+
+typedef struct {
+    PyObject_HEAD
+    cg_var *cv;
+} CgVar;
+
+
 static void
 CgVar_dealloc(CgVar* self)
 {
@@ -100,7 +107,7 @@ CgVar_repr(PyObject *self)
 }
 
 static int
-cgv_type_verify(CgVar *self, enum cv_type type)
+CgVar_type_verify(CgVar *self, enum cv_type type)
 {
     if (self->cv == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cv");
@@ -116,7 +123,7 @@ cgv_type_verify(CgVar *self, enum cv_type type)
 
 
 static PyObject *
-cgv_name_get(CgVar *self)
+CgVar_name_get(CgVar *self)
 {
     char *str;
 
@@ -130,7 +137,7 @@ cgv_name_get(CgVar *self)
 }
 
 static PyObject *
-cgv_name_set(CgVar *self, PyObject *args)
+CgVar_name_set(CgVar *self, PyObject *args)
 {
     char *str;
 
@@ -148,7 +155,7 @@ cgv_name_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-cgv_type_get(CgVar *self)
+CgVar_type_get(CgVar *self)
 {
     assert(self->cv);
 
@@ -156,7 +163,7 @@ cgv_type_get(CgVar *self)
 }
 
 static PyObject *
-cgv_type_set(CgVar *self, PyObject *args)
+CgVar_type_set(CgVar *self, PyObject *args)
 {
     enum cv_type type;
     cg_var *cv;
@@ -182,7 +189,7 @@ cgv_type_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-cgv_type2str(CgVar *self, PyObject *args)
+CgVar_type2str(CgVar *self, PyObject *args)
 {
     enum cv_type type = CGV_ERR;
 
@@ -199,20 +206,20 @@ cgv_type2str(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-cgv_int_get(CgVar *self)
+CgVar_int_get(CgVar *self)
 {
-    if (cgv_type_verify(self, CGV_INT))
+    if (CgVar_type_verify(self, CGV_INT))
         return NULL;
 	
     return PyLong_FromLong(cv_int_get(self->cv));
 }
 
 static PyObject *
-cgv_int_set(CgVar *self, PyObject *args)
+CgVar_int_set(CgVar *self, PyObject *args)
 {
     int32_t num;
 
-    if (cgv_type_verify(self, CGV_INT))
+    if (CgVar_type_verify(self, CGV_INT))
         return NULL;
 	
     if (!PyArg_ParseTuple(args, "i", &num))
@@ -224,20 +231,20 @@ cgv_int_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-cgv_long_get(CgVar *self)
+CgVar_long_get(CgVar *self)
 {
-    if (cgv_type_verify(self, CGV_LONG))
+    if (CgVar_type_verify(self, CGV_LONG))
         return NULL;
 	
     return PyLong_FromLong(cv_long_get(self->cv));
 }
 
 static PyObject *
-cgv_long_set(CgVar *self, PyObject *args)
+CgVar_long_set(CgVar *self, PyObject *args)
 {
     int64_t num;
 
-    if (cgv_type_verify(self, CGV_LONG))
+    if (CgVar_type_verify(self, CGV_LONG))
         return NULL;
 	
     if (!PyArg_ParseTuple(args, "l", &num))
@@ -249,9 +256,9 @@ cgv_long_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-cgv_bool_get(CgVar *self)
+CgVar_bool_get(CgVar *self)
 {
-    if (cgv_type_verify(self, CGV_BOOL))
+    if (CgVar_type_verify(self, CGV_BOOL))
         return NULL;
 	
     if (cv_bool_get(self->cv) == 0)
@@ -261,26 +268,26 @@ cgv_bool_get(CgVar *self)
 }
 
 static PyObject *
-cgv_bool_set(CgVar *self, PyObject *args)
+CgVar_bool_set(CgVar *self, PyObject *args)
 {
     PyObject *bool;
 
-    if (cgv_type_verify(self, CGV_BOOL))
+    if (CgVar_type_verify(self, CGV_BOOL))
         return NULL;
 	
     if (!PyArg_ParseTuple(args, "O!", &PyBool_Type, &bool))
         return NULL;
 
     cv_bool_set(self->cv, (bool == Py_True) ? 1 : 0);
-    return cgv_bool_get(self);
+    return CgVar_bool_get(self);
 }
 
 static PyObject *
-cgv_string_get(CgVar *self)
+CgVar_string_get(CgVar *self)
 {
     char *str;
 
-    if (cgv_type_verify(self, CGV_STRING))
+    if (CgVar_type_verify(self, CGV_STRING))
         return NULL;
 	
     str = cv_string_get(self->cv);
@@ -291,11 +298,11 @@ cgv_string_get(CgVar *self)
 }
 
 static PyObject *
-cgv_string_set(CgVar *self, PyObject *args)
+CgVar_string_set(CgVar *self, PyObject *args)
 {
     char *str;
 
-    if (cgv_type_verify(self, CGV_STRING))
+    if (CgVar_type_verify(self, CGV_STRING))
         return NULL;
 	
     if (!PyArg_ParseTuple(args, "s", &str))
@@ -310,7 +317,7 @@ cgv_string_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-_cgv_ipv4addr_get(CgVar *self)
+_CgVar_ipv4addr_get(CgVar *self)
 {
    struct in_addr *addr;
     char addrp[INET_ADDRSTRLEN];
@@ -328,7 +335,7 @@ _cgv_ipv4addr_get(CgVar *self)
 }
 
 static PyObject *
-_cgv_ipv4masklen_get(CgVar *self)
+_CgVar_ipv4masklen_get(CgVar *self)
 {
     if (cv_type_get(self->cv) != CGV_IPV4ADDR && 
 	cv_type_get(self->cv) != CGV_IPV4PFX) {
@@ -341,7 +348,7 @@ _cgv_ipv4masklen_get(CgVar *self)
 
 #if notimplemented
 static PyObject *
-_cgv_ipv4addr_set(CgVar *self, PyObject *args)
+_CgVar_ipv4addr_set(CgVar *self, PyObject *args)
 {
     PyObject * addr;
 
@@ -364,7 +371,7 @@ _cgv_ipv4addr_set(CgVar *self, PyObject *args)
 #endif /* notimplemented */
 
 static PyObject *
-_cgv_ipv6addr_get(CgVar *self)
+_CgVar_ipv6addr_get(CgVar *self)
 {
     struct in6_addr *addr;
     char addrp[INET6_ADDRSTRLEN];
@@ -382,7 +389,7 @@ _cgv_ipv6addr_get(CgVar *self)
 }
 
 static PyObject *
-_cgv_ipv6masklen_get(CgVar *self)
+_CgVar_ipv6masklen_get(CgVar *self)
 {
     if (cv_type_get(self->cv) != CGV_IPV6ADDR && 
 	cv_type_get(self->cv) != CGV_IPV6PFX) {
@@ -395,7 +402,7 @@ _cgv_ipv6masklen_get(CgVar *self)
 
 #if notimplemented
 static PyObject *
-_cgv_ipv6addr_set(CgVar *self, PyObject *args)
+_CgVar_ipv6addr_set(CgVar *self, PyObject *args)
 {
     PyObject * addr;
 
@@ -416,12 +423,12 @@ _cgv_ipv6addr_set(CgVar *self, PyObject *args)
 
 #define MACADDR_STRLEN 12 /* 6 * "xx" */
 static PyObject *
-cgv_mac_get(CgVar *self)
+CgVar_mac_get(CgVar *self)
 {
     char *m;
     char mac[MACADDR_STRLEN+1];
 
-    if (cgv_type_verify(self, CGV_MACADDR))
+    if (CgVar_type_verify(self, CGV_MACADDR))
         return NULL;
 	
     m = cv_mac_get(self->cv);
@@ -438,13 +445,13 @@ cgv_mac_get(CgVar *self)
 }
 
 static PyObject *
-cgv_uuid_get(CgVar *self)
+CgVar_uuid_get(CgVar *self)
 {
     return PyUnicode_FromString("not implemented");
 }
 
 static PyObject *
-cgv_parse(CgVar *self, PyObject *args)
+CgVar_parse(CgVar *self, PyObject *args)
 {
     char *str;
     cg_var *cv;
@@ -476,114 +483,114 @@ cgv_parse(CgVar *self, PyObject *args)
 }
 
 static PyMethodDef CgVar_methods[] = {
-    {"name_get", (PyCFunction)cgv_name_get, METH_NOARGS,
+    {"name_get", (PyCFunction)CgVar_name_get, METH_NOARGS,
     "Return the name of the variable"
     },
-    {"name_set", (PyCFunction)cgv_name_set, METH_VARARGS,
+    {"name_set", (PyCFunction)CgVar_name_set, METH_VARARGS,
     "Set the name of the variable"
     },
 
-    {"type_get", (PyCFunction)cgv_type_get, METH_NOARGS, 
+    {"type_get", (PyCFunction)CgVar_type_get, METH_NOARGS, 
      "Return the type of the variable"
     },
-    {"type_set", (PyCFunction)cgv_type_set, METH_VARARGS, 
+    {"type_set", (PyCFunction)CgVar_type_set, METH_VARARGS, 
      "Set the type of the variable"
     },
 
 #if 0
-    {"const_get", (PyCFunction)cgv_const_get, METH_NOARGS, 
+    {"const_get", (PyCFunction)CgVar_const_get, METH_NOARGS, 
      "Return the const value of the variable"
     },
-    {"const_set", (PyCFunction)cgv_const_set, METH_VARARGS, 
+    {"const_set", (PyCFunction)CgVar_const_set, METH_VARARGS, 
      "Set the const value of the variable"
     },
  
-    {"flag_get", (PyCFunction)cgv_flag_get, METH_NOARGS, 
+    {"flag_get", (PyCFunction)CgVar_flag_get, METH_NOARGS, 
      "Return the flag of the variable"
     },
-    {"flag_set", (PyCFunction)cgv_flag_set, METH_VARARGS, 
+    {"flag_set", (PyCFunction)CgVar_flag_set, METH_VARARGS, 
      "Set the flag of the variable"
     },
-    {"flag_clr", (PyCFunction)cgv_flag_clr, METH_VARARGS, 
+    {"flag_clr", (PyCFunction)CgVar_flag_clr, METH_VARARGS, 
      "Set the flag of the variable"
     },
 
 #endif
-    {"int_get", (PyCFunction)cgv_int_get, METH_NOARGS, 
+    {"int_get", (PyCFunction)CgVar_int_get, METH_NOARGS, 
      "Return the int value of the variable"
     },
-    {"int_set", (PyCFunction)cgv_int_set, METH_VARARGS, 
+    {"int_set", (PyCFunction)CgVar_int_set, METH_VARARGS, 
      "Set the int value of the variable"
     },
 
-    {"long_get", (PyCFunction)cgv_long_get, METH_NOARGS, 
+    {"long_get", (PyCFunction)CgVar_long_get, METH_NOARGS, 
      "Return the long value of the variable"
     },
-    {"long_set", (PyCFunction)cgv_long_set, METH_VARARGS, 
+    {"long_set", (PyCFunction)CgVar_long_set, METH_VARARGS, 
      "Set the bool value of the variable"
     },
 
-    {"bool_get", (PyCFunction)cgv_bool_get, METH_NOARGS, 
+    {"bool_get", (PyCFunction)CgVar_bool_get, METH_NOARGS, 
      "Return the boolean value of the variable"
     },
-    {"bool_set", (PyCFunction)cgv_bool_set, METH_VARARGS, 
+    {"bool_set", (PyCFunction)CgVar_bool_set, METH_VARARGS, 
      "Set the boolean value of the variable"
     },
 
-    {"string_get", (PyCFunction)cgv_string_get, METH_NOARGS, 
+    {"string_get", (PyCFunction)CgVar_string_get, METH_NOARGS, 
      "Return the string value of the variable"
     },
-    {"string_set", (PyCFunction)cgv_string_set, METH_VARARGS, 
+    {"string_set", (PyCFunction)CgVar_string_set, METH_VARARGS, 
      "Set the string value of variable"
     },
 
-    {"_ipv4addr_get", (PyCFunction)_cgv_ipv4addr_get, METH_NOARGS, 
+    {"_ipv4addr_get", (PyCFunction)_CgVar_ipv4addr_get, METH_NOARGS, 
      "Return the IPv4 address value of the variable"
     },
 
-    {"_ipv4masklen_get", (PyCFunction)_cgv_ipv4masklen_get, METH_NOARGS, 
+    {"_ipv4masklen_get", (PyCFunction)_CgVar_ipv4masklen_get, METH_NOARGS, 
      "Return the IPv4 prefix masklen of the variable"
     },
 #if notimplemented
-    {"_ipv4addr_set", (PyCFunction)_cgv_ipv4addr_set, METH_VARARGS, 
+    {"_ipv4addr_set", (PyCFunction)_CgVar_ipv4addr_set, METH_VARARGS, 
      "Set the IPv4 address value of the variable"
     },
 #endif
 
-    {"_ipv6addr_get", (PyCFunction)_cgv_ipv6addr_get, METH_NOARGS, 
+    {"_ipv6addr_get", (PyCFunction)_CgVar_ipv6addr_get, METH_NOARGS, 
      "Return the Ipv6 address value of the variable"
     },
 
-    {"_ipv6masklen_get", (PyCFunction)_cgv_ipv6masklen_get, METH_NOARGS, 
+    {"_ipv6masklen_get", (PyCFunction)_CgVar_ipv6masklen_get, METH_NOARGS, 
      "Return the Ipv6 prefix masklen of the variable"
     },
 #if notimplemented
-    {"_ipv6addr_set", (PyCFunction)_cgv_ipv6addr_set, METH_VARARGS, 
+    {"_ipv6addr_set", (PyCFunction)_CgVar_ipv6addr_set, METH_VARARGS, 
      "Set the Ipv6 address value of the variable"
     },
 #endif
 
-    {"mac_get", (PyCFunction)cgv_mac_get, METH_NOARGS, 
+    {"mac_get", (PyCFunction)CgVar_mac_get, METH_NOARGS, 
      "Get the MAC address value of the variable"
     },
 
-    {"uuid_set", (PyCFunction)cgv_uuid_get, METH_NOARGS, 
+    {"uuid_set", (PyCFunction)CgVar_uuid_get, METH_NOARGS, 
      "Get the UUID value of the variable"
     },
 
-    {"parse", (PyCFunction)cgv_parse, METH_VARARGS, 
+    {"parse", (PyCFunction)CgVar_parse, METH_VARARGS, 
      "Parse a string representation of a value into a CgVar"
     },
 
 
-    {"type2str", (PyCFunction)cgv_type2str, METH_VARARGS, 
+    {"type2str", (PyCFunction)CgVar_type2str, METH_VARARGS, 
      "Get the string representation of variable value"
     },
 
    {NULL}  /* Sentinel */
 };
 
-PyTypeObject CgVarType = {
+PyTypeObject CgVar_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_cligen.CgVar",            /* tp_name */
     sizeof(CgVar),             /* tp_basicsize */
@@ -626,14 +633,14 @@ PyTypeObject CgVarType = {
 };
 
 int
-cgv_init_object(PyObject *m)
+CgVar_init_object(PyObject *m)
 {
 
-    if (PyType_Ready(&CgVarType) < 0)
+    if (PyType_Ready(&CgVar_Type) < 0)
         return -1;
 
-    Py_INCREF(&CgVarType);
-    PyModule_AddObject(m, "CgVar", (PyObject *)&CgVarType);
+    Py_INCREF(&CgVar_Type);
+    PyModule_AddObject(m, "CgVar", (PyObject *)&CgVar_Type);
 
     PyModule_AddIntConstant(m, (char *) "CGV_ERR", CGV_ERR);
     PyModule_AddIntConstant(m, (char *) "CGV_INT", CGV_INT);
@@ -655,28 +662,42 @@ cgv_init_object(PyObject *m)
     return 0;
 }
 
-CgVar *
+PyObject *
 CgVar_Instance(/*enum cv_type type, char *name*/)
 {
     PyObject *Cv;
 
-    Cv = PyObject_CallObject((PyObject *) &CgVarType, NULL);
+    Cv = PyObject_CallObject((PyObject *) &CgVar_Type, NULL);
 
-    return (CgVar *)Cv;
+    return Cv;
 }    
 
-CgVar *
+PyObject *
 CgVar_InstanceFromCv(cg_var *cv)
 {
-    CgVar *Cv;
+    PyObject *Cv;
 
     if ((Cv = CgVar_Instance()) == NULL)
 	return NULL;
     
-    if (cv_cp(Cv->cv, cv) < 0) {
+    if (cv_cp(((CgVar *)Cv)->cv, cv) < 0) {
         PyErr_SetString(PyExc_MemoryError, "failed to allocate memory");
         return NULL;
     }
 
     return Cv;
+}
+
+/*
+ * Get cg_var* pointer from CgVar object
+ */
+cg_var *
+CgVar_cv(PyObject *Cv)
+{
+    if ( ! PyObject_TypeCheck(Cv, &CgVar_Type)) {
+	PyErr_SetString(PyExc_ValueError, "Object not CgVar type");
+	return NULL;
+    }
+
+    return ((CgVar *)Cv)->cv;
 }
