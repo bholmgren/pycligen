@@ -385,6 +385,60 @@ CLIgen_comment_set(CLIgen *self, PyObject *args)
 }
 
 static PyObject *
+CLIgen_completion(CLIgen *self)
+{
+    return PyLong_FromLong(cligen_completion(self->handle->ch_cligen));
+}
+
+static PyObject *
+CLIgen_completion_set(CLIgen *self, PyObject *args)
+{
+    int mode;
+
+    if (!PyArg_ParseTuple(args, "i", &mode))
+        return NULL;
+
+    cligen_completion_set(self->handle->ch_cligen, (mode == 0 ? 0 : 1));
+    return CLIgen_completion(self);
+}
+
+static PyObject *
+CLIgen_terminalrows(CLIgen *self)
+{
+    return PyLong_FromLong(cligen_terminalrows(self->handle->ch_cligen));
+}
+
+static PyObject *
+CLIgen_terminalrows_set(CLIgen *self, PyObject *args)
+{
+    int rows;
+
+    if (!PyArg_ParseTuple(args, "i", &rows))
+        return NULL;
+
+    cligen_terminalrows_set(self->handle->ch_cligen, rows);
+    return CLIgen_terminalrows(self);
+}
+
+static PyObject *
+CLIgen_terminal_length(CLIgen *self)
+{
+    return PyLong_FromLong(cligen_terminal_length(self->handle->ch_cligen));
+}
+
+static PyObject *
+CLIgen_terminal_length_set(CLIgen *self, PyObject *args)
+{
+    int len;
+
+    if (!PyArg_ParseTuple(args, "i", &len))
+        return NULL;
+
+    cligen_terminal_length_set(self->handle->ch_cligen, len);
+    return CLIgen_terminal_length(self);
+}
+
+static PyObject *
 CLIgen_tabmode(CLIgen *self)
 {
     return PyLong_FromLong(cligen_tabmode(self->handle->ch_cligen));
@@ -398,7 +452,75 @@ CLIgen_tabmode_set(CLIgen *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i", &mode))
         return NULL;
 
-    return PyLong_FromLong(cligen_tabmode_set(self->handle->ch_cligen, mode));
+    return PyLong_FromLong(cligen_tabmode_set(self->handle->ch_cligen, 
+					      (mode == 0 ? 0 : 1)));
+
+}
+
+static PyObject *
+CLIgen_lexicalorder(CLIgen *self)
+{
+    return PyLong_FromLong(cligen_lexicalorder(self->handle->ch_cligen));
+}
+
+static PyObject *
+CLIgen_lexicalorder_set(CLIgen *self, PyObject *args)
+{
+    int mode;
+
+    if (!PyArg_ParseTuple(args, "i", &mode))
+        return NULL;
+
+    return PyLong_FromLong(cligen_lexicalorder_set(self->handle->ch_cligen,
+						   (mode == 0 ? 0 : 1)));
+}
+
+static PyObject *
+CLIgen_ignorecase(CLIgen *self)
+{
+    if (cligen_ignorecase(self->handle->ch_cligen) == 0)
+	Py_RETURN_FALSE;
+    else
+	Py_RETURN_TRUE;
+}
+
+static PyObject *
+CLIgen_ignorecase_set(CLIgen *self, PyObject *args)
+{
+    PyObject *bool;
+
+    if (!PyArg_ParseTuple(args, "O!", &PyBool_Type, &bool))
+        return NULL;
+
+    cligen_ignorecase_set(self->handle->ch_cligen, (bool == Py_True) ? 1 : 0);
+    return CLIgen_ignorecase(self);
+}
+
+static PyObject *
+_CLIgen_output(CLIgen *self, PyObject *args)
+{
+    int fd;
+    FILE *f;
+    char *output;
+    PyObject *file;
+    PyObject *fileno;
+    
+    if (!PyArg_ParseTuple(args, "Os", &file, &output))
+        return NULL;
+    
+    if ((fileno = PyObject_CallMethod(file, "fileno", NULL)) == NULL)
+	return NULL;
+    fd = PyLong_AsLong(fileno);
+    Py_DECREF(fileno);
+
+    if ((f = fdopen(fd, "a")) == NULL) {	
+	PyErr_Format(PyExc_IOError, "%s", strerror(errno));
+	return NULL;
+    }
+    
+    cligen_output(f, output);
+
+    Py_RETURN_NONE;
 }
 
 
@@ -420,6 +542,41 @@ CLIgen_exiting_set(CLIgen *self, PyObject *args)
 }
 
 static PyObject *
+CLIgen_tree(CLIgen *self, PyObject *args)
+{
+    char *name;
+    PyObject *Pt = NULL;
+    PyObject *iterator;
+    PyObject *item;
+    char *n;
+    
+
+    if (!PyArg_ParseTuple(args, "s", &name))
+        return NULL;
+
+
+    if ((iterator = PyObject_GetIter(self->ptlist)) == NULL) {
+	PyErr_SetString(PyExc_ValueError, "get_iter");
+	return NULL;
+    }
+    while (Pt == NULL && (item = PyIter_Next(iterator))) {
+	n = ParseTree_name(item);
+	if (n && strcmp(name, n) == 0)
+	    Pt = item;
+	Py_DECREF(item); 	/* iterator item ref must be released */
+    }
+    Py_DECREF(iterator);
+
+    if (Pt) {
+	Py_INCREF(Pt);
+	return Pt;
+    }
+    
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
 CLIgen_tree_add(CLIgen *self, PyObject *args)
 {
     char *name;
@@ -430,6 +587,9 @@ CLIgen_tree_add(CLIgen *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "sO!", &name, &ParseTree_Type, &Pt))
         return NULL;
 
+    if (ParseTree_name_set(Pt, name) < 0)
+	return PyErr_NoMemory();
+    
     pt = ParseTree_pt(Pt);
     if (cligen_tree_add(self->handle->ch_cligen, name, *pt) < 0)
 	return PyErr_NoMemory();
@@ -522,11 +682,50 @@ static PyMethodDef CLIgen_methods[] = {
      "Set CLIgen comment character"
     },
 
+    {"completion", (PyCFunction)CLIgen_completion, METH_NOARGS,
+     "Get CLIgen completion mode"
+    },
+    {"completion_set", (PyCFunction)CLIgen_completion_set, METH_VARARGS,
+     "Set CLIgen completion mode"
+    },
+
+    {"terminalrows", (PyCFunction)CLIgen_terminalrows, METH_NOARGS,
+     "Get number of displayed terminal rows"
+    },
+    {"terminalrows_set", (PyCFunction)CLIgen_terminalrows_set, METH_VARARGS,
+     "Set number of displayed terminal rows"
+    },
+
+    {"terminal_length", (PyCFunction)CLIgen_terminal_length, METH_NOARGS,
+     "Get length of lines (number of columns on a line)"
+    },
+    {"terminal_length_set", (PyCFunction)CLIgen_terminal_length_set, METH_VARARGS,
+     "Set length of lines (number of columns on a line)"
+    },
+
     {"tabmode", (PyCFunction)CLIgen_tabmode, METH_NOARGS,
      "Get CLIgen tab-mode. 0 is short/ios mode, 1 is long/junos mode"
     },
     {"tabmode_set", (PyCFunction)CLIgen_tabmode_set, METH_VARARGS,
      "Set CLIgen tab-mode. 0 is short/ios mode, 1 is long/junos mode"
+    },
+
+    {"lexicalorder", (PyCFunction)CLIgen_lexicalorder, METH_NOARGS,
+     "Get lexical matching order> strcmp(0) or strvercmp(1)"
+    },
+    {"lexicalorder_set", (PyCFunction)CLIgen_lexicalorder_set, METH_VARARGS,
+     "Set lexical matching order> strcmp(0) or strvercmp(1)"
+    },
+
+    {"ignorecase", (PyCFunction)CLIgen_ignorecase, METH_NOARGS,
+     "Get status of CLIgen ignoring uppercase/lowercase"
+    },
+    {"ignorecase_set", (PyCFunction)CLIgen_ignorecase_set, METH_VARARGS,
+     "Set status of CLIgen ignoring uppercase/lowercase"
+    },
+
+    {"_output", (PyCFunction)_CLIgen_output, METH_VARARGS,
+     "CLIgen terminal output function. All outout should be made via this method"
     },
 
     {"exiting", (PyCFunction)CLIgen_exiting, METH_NOARGS,
@@ -541,6 +740,9 @@ static PyMethodDef CLIgen_methods[] = {
      "CLIgen command evaluation loop"
     },
 
+    {"tree", (PyCFunction)CLIgen_tree, METH_VARARGS,
+     "Get ParseTree by name"
+    },
     {"tree_add", (PyCFunction)CLIgen_tree_add, METH_VARARGS,
      "Add ParseTree to CLIgen instance"
     },
