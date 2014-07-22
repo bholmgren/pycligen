@@ -105,6 +105,27 @@ class CLIgen (_cligen.CLIgen):
                 self.tree_active_set("__CLIgen__")
 
 
+
+    def output(self, file, out):
+        """
+CLIgen output function. All terminal output should be made via this method
+
+   Args:
+      file:  The IO object to direct the output to, such as a file or sys.stdout
+      out:   The output string/object
+
+   Returns:
+      None
+
+   Raises:
+      IOError:  If there is a problem writing to the file object
+
+      """    
+        return super(CLIgen, self)._output(file, str(out))
+
+
+
+
     def _cligen_cb(self, name, vr, arg):
 #        module_name, class_name = name.rsplit(".", 1)
 #        m = importlib.import_module(module_name)
