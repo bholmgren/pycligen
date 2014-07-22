@@ -67,23 +67,44 @@ static int
 CgVar_init(CgVar *self, PyObject *args, PyObject *kwds)
 {
     char *str;
+    char *name = NULL;
     int type = CGV_ERR;
-    PyObject *name = NULL;
+    PyObject *Str;
+    PyObject *value = NULL;
 
-    static char *kwlist[] = {"type", "name", NULL};
+    static char *kwlist[] = {"type", "name", "value", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|iO", kwlist,
-                                      &type, &name))
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|isO", kwlist,
+                                      &type, &name, &value))
         return -1;
 
+    /* Set type */
     cv_type_set(self->cv, type);
-    if (name && (str = StringAsString(name)) != NULL) {
-	if (cv_name_set(self->cv, str) == NULL) {
+
+    /* Set name if given */
+    if (name && cv_name_set(self->cv, name) == NULL) {
+	PyErr_SetNone(PyExc_MemoryError);
+	return -1;
+    }
+
+    /* Parse value if specified */
+    if (value != NULL && (Str = PyObject_Str(value))) {
+	str = StringAsString(Str);
+	Py_DECREF(Str);
+	if (str == NULL)
+	    return -1;
+	if (type == CGV_BOOL)  /* CLIgen wants lowercase */
+	    if (strlen(str) > 0)
+		*str = tolower(*str);
+	if (cv_parse(str, self->cv) < 0) {
 	    free(str);
+	    PyErr_Format(PyExc_ValueError,
+			 "invalid format for type '%s'", cv_type2str(type));
 	    return -1;
 	}
 	free(str);
     }
+    
     return 0;
 }
 
