@@ -27,4 +27,7 @@ extern PyTypeObject ParseTree_Type;
 
 parse_tree *ParseTree_pt(PyObject *pto);
 
+int ParseTree_name_set(PyObject *obj, const char *name);
+char *ParseTree_name(PyObject *obj);
+
 #endif /* _PY_CLIGEN_PT_H_ */
