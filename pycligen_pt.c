@@ -30,6 +30,7 @@
 typedef struct {
     PyObject_HEAD
     parse_tree pt;
+    char *name;      /* Name of ParseTree, set by _cligen.tree_add() */
     PyObject *globals;
 } ParseTree;
 
@@ -38,6 +39,7 @@ ParseTree_dealloc(ParseTree* self)
 {
     /* Free parse_tree ??? */
     Py_XDECREF(self->globals);
+    free(self->name);
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -68,9 +70,11 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
     if ((globals_vec = cvec_new(0)) == NULL)
 	return -1;
 
+    self->name = NULL;
+    
     if ((self->globals = PyDict_New()) == NULL)
 	goto done;
-
+    
     if (syntax != NULL) {
 	if (cligen_parse_str(CLIgen_cligen_handle(cgen),
 			     syntax,
@@ -88,7 +92,7 @@ ParseTree_init(ParseTree *self, PyObject *args, PyObject *kwds)
 		PyErr_Format(PyExc_FileNotFoundError, "%s: '%s'", strerror(errno), file);
 		goto done;
 	    default:
-		PyErr_Format(PyExc_Exception, "%s: '%s'", strerror(errno), file);
+		PyErr_Format(PyExc_IOError, "%s: '%s'", strerror(errno), file);
 		goto done;
 	    }
 	}
@@ -288,4 +292,35 @@ ParseTree_pt(PyObject *pto)
     ParseTree *pt = (ParseTree *)pto;
 
     return &pt->pt;
+}
+
+/*
+ * Module internal function to set ParseTree name
+ */ 
+int
+ParseTree_name_set(PyObject *obj, const char *name)
+{
+    char *new;
+    ParseTree *Pt = (ParseTree *)obj;
+    
+    if ((new = strdup(name)) == NULL)
+	return -1;
+    
+    if (Pt->name)
+	free(Pt->name);
+
+    Pt->name = new;
+
+    return 0;
+}
+
+/*
+ * Module internal function to get ParseTree name
+ */ 
+char *
+ParseTree_name(PyObject *obj)
+{
+    ParseTree *Pt = (ParseTree *)obj;
+    
+    return Pt->name;
 }
