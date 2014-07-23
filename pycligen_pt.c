@@ -191,28 +191,13 @@ ParseTree_fprint(ParseTree *self, PyObject *args)
 }
 #endif
 
-static PyObject *
-test(ParseTree *self, PyObject *args, PyObject *kwds)
-{
-    char *file = NULL;
-    char *syntax = NULL;
-    PyObject *me;
-
-    static char *kwlist[] = {"me", "syntax", "file", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|ss",  kwlist, &me, &syntax, &file))
-	return NULL;
-
-
-    if (file)
-	printf("file: %s\n", file);
-    if (syntax)
-	printf("syntax: %s\n", syntax);
-    
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef ParseTree_methods[] = {
+
+#if 0
+    {"__init__", (PyCFunction)ParseTree_init, METH_VARARGS, 
+     "ParseTree constructor\n\n   Arguments\n      cgen\t- A CLIgen instance\n      syntax-spec\t- A CLIgen syntax specification.\n\n   The syntax specification is a named argument as follows.\n      string='<syntax format>'\t- String containing syntax specification\n      file='<filename>'\t- A file containing syntax specification\n   If argument is unnamed, it implies a string argument"
+    },
+#endif
 
     {"globals", (PyCFunction)ParseTree_globals, METH_NOARGS, 
      "Get dictionary of ParseTree global variables"
@@ -223,10 +208,6 @@ static PyMethodDef ParseTree_methods[] = {
      "Print CLIgen parse-tree to file, brief or detailed."
     },
 #endif
-
-    {"TEST", (PyCFunction)test, METH_VARARGS | METH_KEYWORDS,
-     "test"
-    },
 
    {NULL}  /* Sentinel */
 };
