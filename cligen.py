@@ -26,27 +26,30 @@ import ipaddress
 import _cligen
 from _cligen import *
 
-def cv_parse(str, type, name=None):
-    """Parse a string into a CgVar object.
-
-    Args:
-        str:  A string representing a value to be parsed
-        type: The CLIgen variable type
-        name: The name of the variable (optional)
-
-    Returns:
-        A CgVar object
-
-    Raises:
-        ValueError:  If the string passed cannot be parsed successfully
-        MemoryError: If needed memory was not available
-    """
-
-    cv = CgVar(type)
-    if name is not None:
-        cv.name_set(name)
-    cv.parse(str)
-    return cv
+#
+# obsolete: done by CgVar constructor
+#
+#def cv_parse(str, type, name=None):
+#    """Parse a string into a CgVar object.
+#
+#    Args:
+#        str:  A string representing a value to be parsed
+#        type: The CLIgen variable type
+#        name: The name of the variable (optional)
+#
+#    Returns:
+#        A CgVar object
+#
+#    Raises:
+#        ValueError:  If the string passed cannot be parsed successfully
+#        MemoryError: If needed memory was not available
+#    """
+#
+#    cv = CgVar(type)
+#    if name is not None:
+#        cv.name_set(name)
+#    cv.parse(str)
+#    return cv
         
 
 
@@ -150,7 +153,21 @@ CLIgen output function. All terminal output should be made via this method
 # CgVar
 #
 class CgVar (_cligen.CgVar):
-    'A CLIgen variable object'
+    """CLIgen variable object
+    
+    Constructor Args:
+        type: The CLIgen variable type
+        name: The name of the variable (optional)
+        value:  A string representing a value to be parsed
+
+    Returns:
+        A CgVar object
+
+    Raises:
+        ValueError:  If the string passed cannot be parsed successfully
+        MemoryError: If needed memory was not available
+    """
+
 
     def ipv4addr_get(self):
         """Get IPv4 address value from CgVar object.
