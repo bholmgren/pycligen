@@ -494,22 +494,25 @@ static PyObject *
 CgVar_mac_get(CgVar *self)
 {
     char *m;
-    char mac[MACADDR_STRLEN+1];
+    char mac[MACADDR_STRLEN + 1];
+    unsigned long l;
 
     if (CgVar_type_verify(self, CGV_MACADDR))
         return NULL;
 	
     m = cv_mac_get(self->cv);
-    snprintf(mac, MACADDR_STRLEN,
+    snprintf(mac, sizeof(mac),
 	     "%02x%02x%02x%02x%02x%02x", 
-	     m[0],
-	     m[1],
-	     m[2],
-	     m[3],
-	     m[4],
-	     m[5]);
+	     (unsigned char)m[0],
+	     (unsigned char)m[1],
+	     (unsigned char)m[2],
+	     (unsigned char)m[3],
+	     (unsigned char)m[4],
+	     (unsigned char)m[5]);
+    
+    l = strtoul(mac, NULL, 16);
 
-    return StringFromString(mac);
+    return PyLong_FromLong(l);
 }
 
 static PyObject *
