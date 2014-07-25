@@ -55,15 +55,15 @@ def cb(cgen, vars, arg):
 def letters(cgen, vars, arg):
     'An example of a callback handling a complex syntax'
 
-    if vars.haskey('ca'):
+    if 'ca' in vars:
         cgen.output(sys.stdout, "{:s}\n".format(str(vars['ca'])))
-    if vars.haskey('int'):
+    if 'int' in vars:
         cgen.output(sys.stdout, "{:s}\n".format(str(vars['int'])))
-    if vars.haskey('cb'):
+    if 'cb' in vars:
         cgen.output(sys.stdout, "{:s}\n".format(str(vars['cb'])))
-    if vars.haskey('dd'):
+    if 'dd' in vars:
         cgen.output(sys.stdout, "{:s}\n".format(str(vars['dd'])))
-    if vars.haskey('ee'):
+    if 'ee' in vars:
         cgen.output(sys.stdout, "{:s}\n".format(str(vars['ee'])))
 
     return 0
@@ -81,7 +81,7 @@ def secret(cgen, vars, arg):
 def setprompt(cgen, vars, arg):
     'This callback changes the prompt to the variable setting'
     
-    if vars.haskey('new'):
+    if 'new' in vars:
         cgen.prompt_set(str(vars['new']))
 
     return 0;
