@@ -34,6 +34,8 @@
           static struct PyModuleDef moduledef = { \
             PyModuleDef_HEAD_INIT, name, doc, -1, methods, }; \
           ob = PyModule_Create(&moduledef);
+  #define PyInt_FromLong(l)  PyLong_FromLong(l)
+
 #else
   #define MOD_ERROR_VAL
   #define MOD_SUCCESS_VAL(val)
@@ -44,6 +46,7 @@
   #define PyExc_FileNotFoundError PyExc_IOError
   #define PyExc_PermissionError PyExc_IOError
 
+  #define PyFloat_FromString(x)	PyFloat_FromString((x), NULL)
 #endif
 
 
