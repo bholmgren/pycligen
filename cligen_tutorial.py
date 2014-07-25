@@ -110,7 +110,7 @@ def interface(cgen, func, cvec, arg):
 
 
 
-def usage(argv):
+def usage(cgen, argv):
     cgen.output(sys.stdout, 'Usage: {:s} [-h][-f <filename>][-s <syntax>]\n'.format(sys.argv[0]))
     sys.exit(2)
 
@@ -119,27 +119,29 @@ def usage(argv):
 def main(argv):
     syntax = None
     infile = None
+
+    c = CLIgen()
+
     try:
         opts, args = getopt.getopt(argv,"hf:s:")
     except getopt.GetoptError:
-        usage(argv)
+        usage(c, argv)
 
     for opt, arg in opts:
       if opt == '-h':
-          usage(argv)
+          usage(c, argv)
           sys.exit()
       elif opt in ("-s"):
          syntax = arg
       elif opt in ("-f"):
          infile = arg
 
-    c = CLIgen()
     if syntax is not None:
         pt = ParseTree(c, syntax=syntax)
     elif infile is not None:
         pt = ParseTree(c, file=infile)
     else:
-        usage(argv)
+        usage(c, argv)
 
     if 'prompt' in pt.globals():
         c.prompt_set(pt.globals()['prompt'])
