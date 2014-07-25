@@ -18,11 +18,22 @@
 #  You should have received a copy of the GNU General Public License
 #  along with PyCLIgen; see the file LICENSE.
 
+"""Python binding for the CLIgen library by Olof Hagsand
+
+This module implements a Python API to CLIgen, allowing the developer
+to utilize the power of CLIgen without coding in C
+
+"""
+
 # Make python2 behave more like python 3.
 from __future__ import unicode_literals, absolute_import, print_function
 
 import sys
 import ipaddress
+if sys.version_info.major < 3:
+    from urlparse import urlparse
+else:
+    from urllib.parse import urlparse
 import _cligen
 from _cligen import *
 
@@ -55,9 +66,6 @@ from _cligen import *
         
 
 
-class CLIgenSyntaxError(SyntaxError):
-    """CLIgen syntax parsing error."""
-
 #
 # CLIgen
 #
@@ -66,25 +74,23 @@ class CLIgen (_cligen.CLIgen):
 
     def __init__(self, *args, **kwargs):
         """
-    Args:
-       None
-        or
-       syntax-spec:  An optional argument specifying a CLIgen syntax format
-                     that will be parsed and activated. The specification can 
-                     be provided as a normal string format or as named 
-                     arguments containing the specification or a filename of
-                     a file containing the specification. For example:
+   Args:
+     None
+      or
+     syntax-spec:  An optional argument specifying a CLIgen syntax format
+                   that will be parsed and activated. The specification can 
+                   be provided as a normal string format or as named 
+                   arguments containing the specification or a filename of
+                   a file containing the specification. For example:
 
-                       syntax='myvar="myval";\nhello-world("Greet the world");'
+                     syntax='myvar="myval";\nhello-world("Greet the world");'
+                     file='/usr/local/myapp/myapp.cli'
 
-                       file='/usr/local/myapp/myapp.cli'
-
-    Raises:
-        TypeError:          If invalid arguments are provided.
-        MemoryError:        If memory allcoation fails
-        CLIgenSyntaxError:  If CLIgen fails to parse syntax specification
-
-    """
+   Raises:
+      TypeError:    If invalid arguments are provided.
+      MemoryError:  If memory allcoation fails
+      ValueError:   If the string passed cannot be parsed successfully
+      """
         numargs = len(args) + len(kwargs)
         if numargs > 1:
             raise TypeError("function takes at most 1 argument ({:d} given)".format(numargs))
@@ -165,13 +171,13 @@ class CgVar (_cligen.CgVar):
         name:   The name of the variable
         value:  A string representing a value to be parsed
 
-    Returns:
-        A new CgVar object
+   Returns:
+      A new CgVar object
 
-    Raises:
-        ValueError:  If the string passed cannot be parsed successfully
-        MemoryError: If needed memory was not available
-        """
+   Raises:
+      ValueError:  If the string passed cannot be parsed successfully
+      MemoryError: If needed memory was not available
+      """
         return super(CgVar, self).__init__(*args, **kwargs)
 
 
@@ -180,15 +186,15 @@ class CgVar (_cligen.CgVar):
     def name_get(self):
         """Get CgVar variable name
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-        Name as a string if available or None otherwise
+   Returns:
+      Name as a string if available or None otherwise
     
-    Raises:
-        MemoryError: If needed memory was not available
-        """
+   Raises:
+      MemoryError: If needed memory was not available
+      """
         return super(CgVar, self)._name_get()
 
 
@@ -196,15 +202,15 @@ class CgVar (_cligen.CgVar):
     def name_set(self, name):
         """Set CgVar variable name
 
-    Args:
-        'name':  New name of variable
+   Args:
+      'name':  New name of variable
 
-    Returns:
-        New name as a string
-    
-    Raises:
-        MemoryError: If needed memory was not available
-        """
+   Returns:
+      New name as a string
+   
+  Raises:
+       MemoryError: If needed memory was not available
+       """
         return super(CgVar, self)._name_set(name)
 
 
@@ -212,15 +218,15 @@ class CgVar (_cligen.CgVar):
     def type_get(self):
         """Get CgVar variable type
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-        Variable type as int
+   Returns:
+      Variable type as int
     
-    Raises: 
-        None
-        """
+   Raises: 
+      None
+      """
         return int(super(CgVar, self)._type_get())
 
 
@@ -228,15 +234,15 @@ class CgVar (_cligen.CgVar):
     def type_set(self, type):
         """Set CgVar variable type
 
-    Args:
-        'type':  New type as int
+   Args:
+      'type':  New type as int
 
-    Returns:
-        New type
+   Returns:
+      New type
     
-    Raises:
-        MemoryError: If needed memory was not available
-        """
+   Raises:
+      MemoryError: If needed memory was not available
+      """
         return super(CgVar, self)._type_set(type)
 
 
@@ -244,12 +250,12 @@ class CgVar (_cligen.CgVar):
     def type2str(self, *args):
         """"Get string name of CgVar type
 
-    Args:
-        'type': Optionally specify type, otherwise self's current type is used
+   Args:
+      'type': Optionally specify type, otherwise self's current type is used
 
-    Returns:
-        MemoryError: If needed memory was not available
-        """
+   Returns:
+      MemoryError: If needed memory was not available
+      """
         return super(CgVar, self)._type2str(*args)
         
 
@@ -257,15 +263,15 @@ class CgVar (_cligen.CgVar):
     def int_get(self):
         """Get CgVar variable int value
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-        The int value
+   Returns:
+      The int value
     
-    Raises: 
-        None
-        """
+   Raises: 
+      None
+      """
         return super(CgVar, self)._int_get()
 
 
@@ -273,15 +279,15 @@ class CgVar (_cligen.CgVar):
     def int_set(self, value):
         """Set CgVar variable int value
 
-    Args:
-        'value':  The new value
+   Args:
+      'value':  The new value
 
-    Returns:
-        The new value
+   Returns:
+      The new value
     
-    Raises:
-        ValueError: If 'self' is not a int
-        """
+   Raises:
+      ValueError: If 'self' is not a int
+      """
         return super(CgVar, self)._int_set(value)
 
 
@@ -289,15 +295,15 @@ class CgVar (_cligen.CgVar):
     def long_get(self):
         """Get CgVar variable long value
 
-    Args:
-        None
+   Args:
+       None
 
-    Returns:
-        The long value
+   Returns:
+      The long value
     
-    Raises: 
-        None
-        """
+   Raises: 
+      None
+      """
         return super(CgVar, self)._long_get()
 
 
@@ -305,15 +311,15 @@ class CgVar (_cligen.CgVar):
     def long_set(self, value):
         """Set CgVar variable long value
 
-    Args:
-        'value':  The new value
+   Args:
+      'value':  The new value
 
-    Returns:
-        The new value
+   Returns:
+      The new value
     
-    Raises:
-        ValueError: If 'self' is not a long
-        """
+   Raises:
+      ValueError: If 'self' is not a long
+      """
         return super(CgVar, self)._long_set(value)
 
 
@@ -321,15 +327,15 @@ class CgVar (_cligen.CgVar):
     def bool_get(self):
         """Get CgVar variable boolean value
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-        True or False
+   Returns:
+      True or False
     
-    Raises: 
-        None
-        """
+   Raises: 
+      None
+      """
         return super(CgVar, self)._bool_get()
 
 
@@ -337,30 +343,30 @@ class CgVar (_cligen.CgVar):
     def bool_set(self, boolean):
         """Set CgVar variable boolean value
 
-    Args:
-        'boolean':  The status as a boolean 
+   Args:
+      'boolean':  The status as a boolean 
 
-    Returns:
-        The new value
+   Returns:
+      The new value
     
-    Raises:
-        ValueError: If 'self' is not a boolean
-        """
+   Raises:
+      ValueError: If 'self' is not a boolean
+      """
         return super(CgVar, self)._bool_set(boolean)
 
 
     def string_get(self):
         """Get CgVar variable string value
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-       The string value or None if not set
+   Returns:
+     The string value or None if not set
     
-    Raises:
-        MemoryError: If needed memory was not available
-        """
+   Raises:
+      MemoryError: If needed memory was not available
+      """
         return super(CgVar, self)._string_get()
 
 
@@ -368,15 +374,15 @@ class CgVar (_cligen.CgVar):
     def string_set(self, string):
         """Set CgVar variable string value
 
-    Args:
-        'string':  New value of variable
+   Args:
+      'string':  New value of variable
 
-    Returns:
-        The new value
+   Returns:
+      The new value
     
-    Raises:
-        MemoryError: If needed memory was not available
-        """
+   Raises:
+      MemoryError: If needed memory was not available
+      """
         return super(CgVar, self)._string_set(string)
 
 
@@ -385,16 +391,16 @@ class CgVar (_cligen.CgVar):
     def ipv4addr_get(self):
         """Get IPv4 address value from CgVar object.
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-        An ipaddress.IPv4Address object
+   Returns:
+      An ipaddress.IPv4Address object
 
-    Raises:
-        TypeError:  If the CgVar object is not of the types CGV_IPV4ADDR
-                    of CGV_IPV4PFX.
-    """
+   Raises:
+      TypeError:  If the CgVar object is not of the types CGV_IPV4ADDR
+                  of CGV_IPV4PFX.
+   """
         return ipaddress.IPv4Address(super(CgVar, self)._ipv4addr_get())
 
 
@@ -402,15 +408,15 @@ class CgVar (_cligen.CgVar):
     def ipv4masklen_get(self):
         """Get mask length of IPv4 prefix value from CgVar object.
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-        An int
+   Returns:
+      The mask length as an int
 
-    Raises:
-        TypeError:  If the CgVar object is not of the types CGV_IPV4ADDR
-                    of CGV_IPV4PFX.
+   Raises:
+      TypeError:  If the CgVar object is not of the types CGV_IPV4ADDR
+                  of CGV_IPV4PFX.
     """
         return super(CgVar, self)._ipv4masklen_get()
 
@@ -458,15 +464,15 @@ class CgVar (_cligen.CgVar):
     def ipv6addr_get(self):
         """Get IP v6 address value from CgVar object.
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-        An ipaddress.IPv6Address object
+   Returns:
+      An ipaddress.IPv6Address object
 
-    Raises:
-        TypeError:  If the CgVar object is not of the types CGV_IPV6ADDR
-                    of CGV_IPV6PFX.
+   Raises:
+      TypeError:  If the CgVar object is not of the types CGV_IPV6ADDR
+                  of CGV_IPV6PFX.
     """
         return ipaddress.IPv6Address(super(CgVar, self)._ipv6addr_get())
 
@@ -474,15 +480,15 @@ class CgVar (_cligen.CgVar):
     def ipv6masklen_get(self):
         """Get mask length of IPv6 prefix value from CgVar object.
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-        An int
+   Returns:
+      The mask length as an int
 
-    Raises:
-        TypeError:  If the CgVar object is not of the types CGV_IPV6ADDR
-                    of CGV_IPV6PFX.
+   Raises:
+      TypeError:  If the CgVar object is not of the types CGV_IPV6ADDR
+                  of CGV_IPV6PFX.
     """
         return super(CgVar, self)._ipv6masklen_get()
 
@@ -530,15 +536,15 @@ class CgVar (_cligen.CgVar):
     def mac_get(self):
         """Get CgVar variable MAC address value
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-       The MAC address value as a 'long'
+   Returns:
+     The MAC address value as a 'long'
     
-    Raises:
-        MemoryError: If needed memory was not available
-        """
+   Raises:
+      MemoryError: If needed memory was not available
+      """
         return super(CgVar, self)._mac_get()
 
 
@@ -546,15 +552,15 @@ class CgVar (_cligen.CgVar):
     def uuid_get(self):
         """Get CgVar variable UUID value
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-       The UUID as an 'uuid' object
+   Returns:
+     The UUID as an 'uuid' object
     
-    Raises:
-        MemoryError: If needed memory was not available
-        """
+   Raises:
+      MemoryError: If needed memory was not available
+      """
         return super(CgVar, self)._uuid_get()
 
 
@@ -563,15 +569,14 @@ class CgVar (_cligen.CgVar):
     def time_get(self):
         """Get time value of CgVar object.
 
-    Args:
-        None
+   Args:
+      None
 
-    Returns:
-        The time since the epoch as a 'float' object
+   Returns:
+      The time since the epoch as a 'float' object
 
-    Raises:
-        MemoryError: If needed memory was not available
-
+   Raises:
+      MemoryError: If needed memory was not available
     """
         return super(CgVar, self)._time_get()
 
@@ -580,19 +585,18 @@ class CgVar (_cligen.CgVar):
     def time_set(self, timespec):
         """Set time value of CgVar object.
 
-    Args:
-        timespec: The time specification which can either be a Python 'float' or
-        'int' object specifying seconds since the epoch or a 'string' to be
-         parsed by CLIgen.
+   Args:
+      timespec: The time specification which can either be a Python 'float' or
+      'int' object specifying seconds since the epoch or a 'string' to be
+       parsed by CLIgen.
 
-    Returns:
-        The new value as a 'float' object
+   Returns:
+      The new value as a 'float' object
 
-    Raises:
-        TypeError:   If self is not a CGV_TIME or timespec is an invalid type
-        ValueError:  If timespec could not be parsed
-        MemoryError: If needed memory was not available
-
+   Raises:
+      TypeError:   If self is not a CGV_TIME or timespec is an invalid type
+      ValueError:  If timespec could not be parsed
+      MemoryError: If needed memory was not available
     """
         if self.type_get() is not CGV_TIME:
             raise TypeError("'self' is of invalid type")
@@ -605,22 +609,59 @@ class CgVar (_cligen.CgVar):
         return self.time_get()
 
 
+    def url_get(self):
+        """Get URL value from CgVar object.
+   Args:
+      None
+
+   Returns:
+      A populated urlib/urlparse ParseResult object
+
+   Raises:
+      TypeError:   If self is not CGV_URL type
+      """
+
+        if self.type_get() is not CGV_URL:
+            raise TypeError("'self' is of invalid type")
+
+        return urlparse(str(self))
+
+    def url_set(self, url):
+        """Set URL value to CgVar object.
+   Args:
+      'url':  A string representing the url
+
+   Returns:
+      A populated urlib/urlparse ParseResult object
+
+   Raises:
+      ValueError:  If 'string' could not be parsed
+      MemoryError: If needed memory was not available
+      """
+
+        if self.type_get() is not CGV_URL:
+            raise TypeError("'self' is of invalid type")
+
+        self.parse(url)
+        return self.url_get()
+
+        
 
     def parse(self, string):
         """Parse a string representation of a value and assign the result 
 to 'self'.  The parsing is based on the current type set.
 
-    Args:
-        'string': The string representation of the value. Ex: "1.2.3.4" or
-                  "01:00:af:43:fd:aa"
+   Args:
+      'string': The string representation of the value. Ex: "1.2.3.4" or
+                "01:00:af:43:fd:aa"
 
-    Returns:
-         True on success
+   Returns:
+       True on success
 
-    Raises:
-        ValueError:  If 'string' could not be parsed
-        MemoryError: If needed memory was not available
-        """
+   Raises:
+      ValueError:  If 'string' could not be parsed
+      MemoryError: If needed memory was not available
+      """
         return super(CgVar, self)._parse(string)
 
 
@@ -693,7 +734,7 @@ class Cvec ():
     def __len__(self):
         return len(self._cvec)
     
-    def haskey(self, key):
+    def __contains__(self, key):
         for cv in self._cvec:
             if cv.name_get() == key:
                 return True
