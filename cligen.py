@@ -221,7 +221,7 @@ class CgVar (_cligen.CgVar):
     Raises: 
         None
         """
-        return super(CgVar, self)._type_get()
+        return int(super(CgVar, self)._type_get())
 
 
 
