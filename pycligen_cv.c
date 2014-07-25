@@ -143,7 +143,7 @@ CgVar_type_verify(CgVar *self, enum cv_type type)
 
 
 static PyObject *
-CgVar_name_get(CgVar *self)
+_CgVar_name_get(CgVar *self)
 {
     char *str;
 
@@ -157,7 +157,7 @@ CgVar_name_get(CgVar *self)
 }
 
 static PyObject *
-CgVar_name_set(CgVar *self, PyObject *args)
+_CgVar_name_set(CgVar *self, PyObject *args)
 {
     char *str;
 
@@ -175,7 +175,7 @@ CgVar_name_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-CgVar_type_get(CgVar *self)
+_CgVar_type_get(CgVar *self)
 {
     assert(self->cv);
 
@@ -183,7 +183,7 @@ CgVar_type_get(CgVar *self)
 }
 
 static PyObject *
-CgVar_type_set(CgVar *self, PyObject *args)
+_CgVar_type_set(CgVar *self, PyObject *args)
 {
     enum cv_type type;
     cg_var *cv;
@@ -209,7 +209,7 @@ CgVar_type_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-CgVar_type2str(CgVar *self, PyObject *args)
+_CgVar_type2str(CgVar *self, PyObject *args)
 {
     enum cv_type type = CGV_ERR;
 
@@ -282,7 +282,7 @@ CgVar_flag_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-CgVar_int_get(CgVar *self)
+_CgVar_int_get(CgVar *self)
 {
     if (CgVar_type_verify(self, CGV_INT))
         return NULL;
@@ -291,7 +291,7 @@ CgVar_int_get(CgVar *self)
 }
 
 static PyObject *
-CgVar_int_set(CgVar *self, PyObject *args)
+_CgVar_int_set(CgVar *self, PyObject *args)
 {
     int32_t num;
 
@@ -307,7 +307,7 @@ CgVar_int_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-CgVar_long_get(CgVar *self)
+_CgVar_long_get(CgVar *self)
 {
     if (CgVar_type_verify(self, CGV_LONG))
         return NULL;
@@ -316,7 +316,7 @@ CgVar_long_get(CgVar *self)
 }
 
 static PyObject *
-CgVar_long_set(CgVar *self, PyObject *args)
+_CgVar_long_set(CgVar *self, PyObject *args)
 {
     int64_t num;
 
@@ -332,7 +332,7 @@ CgVar_long_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-CgVar_bool_get(CgVar *self)
+_CgVar_bool_get(CgVar *self)
 {
     if (CgVar_type_verify(self, CGV_BOOL))
         return NULL;
@@ -344,7 +344,7 @@ CgVar_bool_get(CgVar *self)
 }
 
 static PyObject *
-CgVar_bool_set(CgVar *self, PyObject *args)
+_CgVar_bool_set(CgVar *self, PyObject *args)
 {
     PyObject *bool;
 
@@ -355,11 +355,11 @@ CgVar_bool_set(CgVar *self, PyObject *args)
         return NULL;
 
     cv_bool_set(self->cv, (bool == Py_True) ? 1 : 0);
-    return CgVar_bool_get(self);
+    return _CgVar_bool_get(self);
 }
 
 static PyObject *
-CgVar_string_get(CgVar *self)
+_CgVar_string_get(CgVar *self)
 {
     char *str;
 
@@ -374,7 +374,7 @@ CgVar_string_get(CgVar *self)
 }
 
 static PyObject *
-CgVar_string_set(CgVar *self, PyObject *args)
+_CgVar_string_set(CgVar *self, PyObject *args)
 {
     char *str;
 
@@ -491,7 +491,7 @@ _CgVar_ipv6addr_set(CgVar *self, PyObject *args)
 
 #define MACADDR_STRLEN 12 /* 6 * "xx" */
 static PyObject *
-CgVar_mac_get(CgVar *self)
+_CgVar_mac_get(CgVar *self)
 {
     char *m;
     char mac[MACADDR_STRLEN + 1];
@@ -516,13 +516,92 @@ CgVar_mac_get(CgVar *self)
 }
 
 static PyObject *
-CgVar_uuid_get(CgVar *self)
+_CgVar_uuid_get(CgVar *self)
 {
-    return StringFromString("not implemented");
+    char *uuidstr;
+    PyObject *uuid;
+    PyObject *mod;
+    PyObject *ret;
+
+    if (CgVar_type_verify(self, CGV_UUID))
+        return NULL;
+
+    if ((uuidstr = cv2str_dup(self->cv)) == NULL)
+	return PyErr_NoMemory();
+    uuid = StringFromString(uuidstr);
+    free(uuidstr);
+    if (uuid == NULL)
+	return NULL;
+
+    if ((mod = PyImport_ImportModule("uuid")) == NULL) {
+	Py_DECREF(uuid);
+	return NULL; 
+    }
+    
+    ret = PyObject_CallMethod(mod, "UUID", "O", uuid);
+    Py_DECREF(uuid);
+    Py_DECREF(mod);
+    
+    return ret;
 }
 
 static PyObject *
-CgVar_parse(CgVar *self, PyObject *args)
+_CgVar_time_get(CgVar *self)
+{
+    size_t len;
+    char *fstr;
+    struct timeval t;
+    PyObject *tstr;
+    PyObject *tobj;
+
+    if (CgVar_type_verify(self, CGV_TIME))
+        return NULL;
+
+    t = cv_time_get(self->cv);
+    len = snprintf(NULL, 0, "%ld",  t.tv_sec) +
+	strlen(".") + snprintf(NULL, 0, "%ld",  t.tv_usec) + 1;
+    
+    if ((fstr = malloc(len)) == NULL)
+	return PyErr_NoMemory();
+    snprintf(fstr, len, "%ld.%ld",  t.tv_sec, t.tv_usec);
+
+    tstr = StringFromString(fstr);
+    free(fstr);
+    if (tstr == NULL)
+	return NULL;
+
+    tobj = PyFloat_FromString(tstr);
+    Py_DECREF(tstr);
+
+    return tobj;
+}
+
+static PyObject *
+_CgVar_time_set(CgVar *self, PyObject *args)
+{
+    char *secs;
+    char *usecs;
+    struct timeval t;
+
+    if (CgVar_type_verify(self, CGV_TIME))
+        return NULL;
+
+    if (!PyArg_ParseTuple(args, "s", &secs))
+        return NULL;
+
+    if ((usecs  = strchr(secs, '.')) != NULL) {
+	*usecs++ = '\0';
+	t.tv_usec = strtoul(usecs, NULL, 10);
+    }
+    t.tv_sec = strtoul(secs, NULL, 10);
+
+    cv_time_set(self->cv, t);
+    
+    return _CgVar_time_get(self);
+}
+
+static PyObject *
+_CgVar_parse(CgVar *self, PyObject *args)
 {
     char *str;
     cg_var *cv;
@@ -554,17 +633,17 @@ CgVar_parse(CgVar *self, PyObject *args)
 }
 
 static PyMethodDef CgVar_methods[] = {
-    {"name_get", (PyCFunction)CgVar_name_get, METH_NOARGS,
+    {"_name_get", (PyCFunction)_CgVar_name_get, METH_NOARGS,
     "Return the name of the variable"
     },
-    {"name_set", (PyCFunction)CgVar_name_set, METH_VARARGS,
+    {"_name_set", (PyCFunction)_CgVar_name_set, METH_VARARGS,
     "Set the name of the variable"
     },
 
-    {"type_get", (PyCFunction)CgVar_type_get, METH_NOARGS, 
+    {"_type_get", (PyCFunction)_CgVar_type_get, METH_NOARGS, 
      "Return the type of the variable"
     },
-    {"type_set", (PyCFunction)CgVar_type_set, METH_VARARGS, 
+    {"_type_set", (PyCFunction)_CgVar_type_set, METH_VARARGS, 
      "Set the type of the variable"
     },
 
@@ -587,31 +666,31 @@ static PyMethodDef CgVar_methods[] = {
 
 #if 0
 #endif
-    {"int_get", (PyCFunction)CgVar_int_get, METH_NOARGS, 
+    {"_int_get", (PyCFunction)_CgVar_int_get, METH_NOARGS, 
      "Return the int value of the variable"
     },
-    {"int_set", (PyCFunction)CgVar_int_set, METH_VARARGS, 
+    {"_int_set", (PyCFunction)_CgVar_int_set, METH_VARARGS, 
      "Set the int value of the variable"
     },
 
-    {"long_get", (PyCFunction)CgVar_long_get, METH_NOARGS, 
+    {"_long_get", (PyCFunction)_CgVar_long_get, METH_NOARGS, 
      "Return the long value of the variable"
     },
-    {"long_set", (PyCFunction)CgVar_long_set, METH_VARARGS, 
+    {"_long_set", (PyCFunction)_CgVar_long_set, METH_VARARGS, 
      "Set the bool value of the variable"
     },
 
-    {"bool_get", (PyCFunction)CgVar_bool_get, METH_NOARGS, 
+    {"_bool_get", (PyCFunction)_CgVar_bool_get, METH_NOARGS, 
      "Return the boolean value of the variable"
     },
-    {"bool_set", (PyCFunction)CgVar_bool_set, METH_VARARGS, 
+    {"_bool_set", (PyCFunction)_CgVar_bool_set, METH_VARARGS, 
      "Set the boolean value of the variable"
     },
 
-    {"string_get", (PyCFunction)CgVar_string_get, METH_NOARGS, 
+    {"_string_get", (PyCFunction)_CgVar_string_get, METH_NOARGS, 
      "Return the string value of the variable"
     },
-    {"string_set", (PyCFunction)CgVar_string_set, METH_VARARGS, 
+    {"_string_set", (PyCFunction)_CgVar_string_set, METH_VARARGS, 
      "Set the string value of variable"
     },
 
@@ -641,20 +720,28 @@ static PyMethodDef CgVar_methods[] = {
     },
 #endif
 
-    {"mac_get", (PyCFunction)CgVar_mac_get, METH_NOARGS, 
+    {"_mac_get", (PyCFunction)_CgVar_mac_get, METH_NOARGS, 
      "Get the MAC address value of the variable"
     },
 
-    {"uuid_set", (PyCFunction)CgVar_uuid_get, METH_NOARGS, 
+    {"_uuid_get", (PyCFunction)_CgVar_uuid_get, METH_NOARGS, 
      "Get the UUID value of the variable"
     },
 
-    {"parse", (PyCFunction)CgVar_parse, METH_VARARGS, 
+    {"_time_get", (PyCFunction)_CgVar_time_get, METH_NOARGS, 
+     "Get the time value of the variable"
+    },
+
+    {"_time_set", (PyCFunction)_CgVar_time_set, METH_VARARGS, 
+     "Set the time value of the variable"
+    },
+
+    {"_parse", (PyCFunction)_CgVar_parse, METH_VARARGS, 
      "Parse a string representation of a value into a CgVar"
     },
 
 
-    {"type2str", (PyCFunction)CgVar_type2str, METH_VARARGS, 
+    {"_type2str", (PyCFunction)_CgVar_type2str, METH_VARARGS, 
      "Get the string representation of variable value"
     },
 

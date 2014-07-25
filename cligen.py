@@ -26,6 +26,8 @@ import ipaddress
 import _cligen
 from _cligen import *
 
+
+    
 #
 # obsolete: done by CgVar constructor
 #
@@ -153,20 +155,231 @@ CLIgen output function. All terminal output should be made via this method
 # CgVar
 #
 class CgVar (_cligen.CgVar):
-    """CLIgen variable object
+    'CLIgen variable object'
     
-    Constructor Args:
-        type: The CLIgen variable type
-        name: The name of the variable (optional)
+
+
+    def __init__(self, *args, **kwargs):
+        """    Optional args:
+        type:   The CLIgen variable type
+        name:   The name of the variable
         value:  A string representing a value to be parsed
 
     Returns:
-        A CgVar object
+        A new CgVar object
 
     Raises:
         ValueError:  If the string passed cannot be parsed successfully
         MemoryError: If needed memory was not available
-    """
+        """
+        return super(CgVar, self).__init__(*args, **kwargs)
+
+
+
+
+    def name_get(self):
+        """Get CgVar variable name
+
+    Args:
+        None
+
+    Returns:
+        Name as a string if available or None otherwise
+    
+    Raises:
+        MemoryError: If needed memory was not available
+        """
+        return super(CgVar, self)._name_get()
+
+
+
+    def name_set(self, name):
+        """Set CgVar variable name
+
+    Args:
+        'name':  New name of variable
+
+    Returns:
+        New name as a string
+    
+    Raises:
+        MemoryError: If needed memory was not available
+        """
+        return super(CgVar, self)._name_set(name)
+
+
+
+    def type_get(self):
+        """Get CgVar variable type
+
+    Args:
+        None
+
+    Returns:
+        Variable type as int
+    
+    Raises: 
+        None
+        """
+        return super(CgVar, self)._type_get()
+
+
+
+    def type_set(self, type):
+        """Set CgVar variable type
+
+    Args:
+        'type':  New type as int
+
+    Returns:
+        New type
+    
+    Raises:
+        MemoryError: If needed memory was not available
+        """
+        return super(CgVar, self)._type_set(type)
+
+
+
+    def type2str(self, *args):
+        """"Get string name of CgVar type
+
+    Args:
+        'type': Optionally specify type, otherwise self's current type is used
+
+    Returns:
+        MemoryError: If needed memory was not available
+        """
+        return super(CgVar, self)._type2str(*args)
+        
+
+
+    def int_get(self):
+        """Get CgVar variable int value
+
+    Args:
+        None
+
+    Returns:
+        The int value
+    
+    Raises: 
+        None
+        """
+        return super(CgVar, self)._int_get()
+
+
+
+    def int_set(self, value):
+        """Set CgVar variable int value
+
+    Args:
+        'value':  The new value
+
+    Returns:
+        The new value
+    
+    Raises:
+        ValueError: If 'self' is not a int
+        """
+        return super(CgVar, self)._int_set(value)
+
+
+
+    def long_get(self):
+        """Get CgVar variable long value
+
+    Args:
+        None
+
+    Returns:
+        The long value
+    
+    Raises: 
+        None
+        """
+        return super(CgVar, self)._long_get()
+
+
+
+    def long_set(self, value):
+        """Set CgVar variable long value
+
+    Args:
+        'value':  The new value
+
+    Returns:
+        The new value
+    
+    Raises:
+        ValueError: If 'self' is not a long
+        """
+        return super(CgVar, self)._long_set(value)
+
+
+
+    def bool_get(self):
+        """Get CgVar variable boolean value
+
+    Args:
+        None
+
+    Returns:
+        True or False
+    
+    Raises: 
+        None
+        """
+        return super(CgVar, self)._bool_get()
+
+
+
+    def bool_set(self, boolean):
+        """Set CgVar variable boolean value
+
+    Args:
+        'boolean':  The status as a boolean 
+
+    Returns:
+        The new value
+    
+    Raises:
+        ValueError: If 'self' is not a boolean
+        """
+        return super(CgVar, self)._bool_set(boolean)
+
+
+    def string_get(self):
+        """Get CgVar variable string value
+
+    Args:
+        None
+
+    Returns:
+       The string value or None if not set
+    
+    Raises:
+        MemoryError: If needed memory was not available
+        """
+        return super(CgVar, self)._string_get()
+
+
+
+    def string_set(self, string):
+        """Set CgVar variable string value
+
+    Args:
+        'string':  New value of variable
+
+    Returns:
+        The new value
+    
+    Raises:
+        MemoryError: If needed memory was not available
+        """
+        return super(CgVar, self)._string_set(string)
+
+
 
 
     def ipv4addr_get(self):
@@ -314,6 +527,101 @@ class CgVar (_cligen.CgVar):
 #        return self.parse(str(pfx))
 
 
+    def mac_get(self):
+        """Get CgVar variable MAC address value
+
+    Args:
+        None
+
+    Returns:
+       The MAC address value as a 'long'
+    
+    Raises:
+        MemoryError: If needed memory was not available
+        """
+        return super(CgVar, self)._mac_get()
+
+
+
+    def uuid_get(self):
+        """Get CgVar variable UUID value
+
+    Args:
+        None
+
+    Returns:
+       The UUID as an 'uuid' object
+    
+    Raises:
+        MemoryError: If needed memory was not available
+        """
+        return super(CgVar, self)._uuid_get()
+
+
+
+
+    def time_get(self):
+        """Get time value of CgVar object.
+
+    Args:
+        None
+
+    Returns:
+        The time since the epoch as a 'float' object
+
+    Raises:
+        MemoryError: If needed memory was not available
+
+    """
+        return super(CgVar, self)._time_get()
+
+
+
+    def time_set(self, timespec):
+        """Set time value of CgVar object.
+
+    Args:
+        timespec: The time specification which can either be a Python 'float' or
+        'int' object specifying seconds since the epoch or a 'string' to be
+         parsed by CLIgen.
+
+    Returns:
+        The new value as a 'float' object
+
+    Raises:
+        TypeError:   If self is not a CGV_TIME or timespec is an invalid type
+        ValueError:  If timespec could not be parsed
+        MemoryError: If needed memory was not available
+
+    """
+        if self.type_get() is not CGV_TIME:
+            raise TypeError("'self' is of invalid type")
+
+        if isinstance(timespec, int) or isinstance(timespec, float):
+            super(CgVar, self)._time_set(str(float(timespec)))
+        elif isinstance(timespec, str):
+            self.parse(timespec)
+            
+        return self.time_get()
+
+
+
+    def parse(self, string):
+        """Parse a string representation of a value and assign the result 
+to 'self'.  The parsing is based on the current type set.
+
+    Args:
+        'string': The string representation of the value. Ex: "1.2.3.4" or
+                  "01:00:af:43:fd:aa"
+
+    Returns:
+         True on success
+
+    Raises:
+        ValueError:  If 'string' could not be parsed
+        MemoryError: If needed memory was not available
+        """
+        return super(CgVar, self)._parse(string)
 
 
 #
@@ -440,3 +748,36 @@ class Cvec ():
 #                raise AttributeError("Argument must be string")
 #
 #
+
+
+
+
+def type2str(type):
+    """Get string representation of a CLIgen type
+
+    Args:
+        'type': The CLIgen type
+
+    Returns:
+        MemoryError: If needed memory was not available
+        """
+    return CgVar().type2str(type)
+
+
+# Testing..
+#_types = {
+#    type2str(CGV_INT) : CGV_INT,
+#    type2str(CGV_LONG) : CGV_LONG,
+#    type2str(CGV_BOOL) : CGV_BOOL,
+#    type2str(CGV_STRING) : CGV_STRING,
+#    type2str(CGV_REST) : CGV_REST,
+#    type2str(CGV_INTERFACE) : CGV_INTERFACE,
+#    type2str(CGV_IPV4ADDR) : CGV_IPV4ADDR,
+#    type2str(CGV_IPV4PFX) : CGV_IPV4PFX,
+#    type2str(CGV_IPV6ADDR) : CGV_IPV6ADDR,
+#    type2str(CGV_IPV6PFX) : CGV_IPV6PFX,
+#    type2str(CGV_MACADDR) : CGV_MACADDR,
+#    type2str(CGV_URL) : CGV_URL,
+#    type2str(CGV_UUID) : CGV_UUID,
+#    type2str(CGV_TIME) : CGV_TIME,
+#}
