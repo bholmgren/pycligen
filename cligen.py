@@ -24,9 +24,11 @@ This module implements a Python API to CLIgen, allowing the developer
 to utilize the power of CLIgen without coding in C
 
 """
-
 # Make python2 behave more like python 3.
 from __future__ import unicode_literals, absolute_import, print_function
+
+__version__ = '0.1'
+
 
 import sys
 import ipaddress
@@ -718,7 +720,7 @@ class Cvec ():
             raise TypeError('key must be int or str')
 
         if (isinstance(cv, CgVar)):
-            pass
+            self._cvec[key] = cv;
         elif isinstance(cv, str):
             self._cvec[key].parse(cv)
         else:
@@ -740,8 +742,14 @@ class Cvec ():
                 return True
         return False
 
-    def add(self, type):
-        cv = CgVar(type)
+    def add(self, arg):
+        if isinstance(arg, int):
+            cv = CgVar(arg)
+        elif isinstance(arg, CgVar):
+            cv = arg
+        else:
+            raise TypeError("argument must be int or CgVar")
+
         self._cvec.append(cv)
         return cv;
 
