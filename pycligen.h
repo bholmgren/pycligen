@@ -47,6 +47,7 @@
   #define PyExc_PermissionError PyExc_IOError
 
   #define PyFloat_FromString(x)	PyFloat_FromString((x), NULL)
+  #define PyCapsule_New(p,n,d)  PyCObject_FromVoidPtr((p),(d))
 #endif
 
 
