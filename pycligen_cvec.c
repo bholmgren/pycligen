@@ -58,7 +58,7 @@ Cvec_from_cvec(PyObject *self, cvec *vr)
     
     /* Add CgVars */
     for (cv = NULL; (cv = cvec_each(vr, cv)); ) {
-	Cv = PyObject_CallMethod(Cvec, "add", "i", cv_type_get(cv));
+	Cv = PyObject_CallMethod(Cvec, "append", "i", cv_type_get(cv));
 	if (Cv == NULL)
 	    goto quit;
 	Py_DECREF(Cv);  /* leave only reference owned by Cvec object */

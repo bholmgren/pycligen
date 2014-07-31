@@ -742,7 +742,7 @@ class Cvec ():
                 return True
         return False
 
-    def add(self, arg):
+    def append(self, arg):
         if isinstance(arg, int):
             cv = CgVar(arg)
         elif isinstance(arg, CgVar):
