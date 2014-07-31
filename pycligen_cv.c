@@ -21,7 +21,6 @@
  */
 
 #include <Python.h>
-#include "structmember.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -197,7 +196,7 @@ _CgVar_type_set(CgVar *self, PyObject *args)
 	
 	/* Clean-up by creating new cg_var and free old */
 	if ((cv = cv_new(type)) == NULL || 
-	         cv_name_set(cv, cv_name_get(self->cv)) == NULL) {
+	    (cv_name_get(self->cv) && !cv_name_set(cv, cv_name_get(self->cv)))){
 	    PyErr_SetString(PyExc_MemoryError, "cv_new");
 	    return NULL;
 	}
@@ -365,8 +364,7 @@ _CgVar_string_get(CgVar *self)
 
     if (CgVar_type_verify(self, CGV_STRING))
         return NULL;
-	
-    str = cv_string_get(self->cv);
+	    str = cv_string_get(self->cv);
     if (str == NULL)
 	Py_RETURN_NONE;
     
@@ -632,6 +630,22 @@ _CgVar_parse(CgVar *self, PyObject *args)
     Py_RETURN_TRUE;
 }
 
+
+/*
+ * Internal method: Get cg_var* pointer to self->cv. 
+ */
+static PyObject *
+__CgVar_cv(CgVar *self)
+{
+    PyObject *Cv;
+
+    if ((Cv = PyCapsule_New((void *)self->cv, NULL, NULL)) == NULL)
+	return NULL;
+
+    return Cv;
+}
+
+
 static PyMethodDef CgVar_methods[] = {
     {"_name_get", (PyCFunction)_CgVar_name_get, METH_NOARGS,
     "Return the name of the variable"
@@ -743,6 +757,10 @@ static PyMethodDef CgVar_methods[] = {
 
     {"_type2str", (PyCFunction)_CgVar_type2str, METH_VARARGS, 
      "Get the string representation of variable value"
+    },
+
+    {"__cv", (PyCFunction)__CgVar_cv, METH_NOARGS, 
+     "Get a pointer to self->cv"
     },
 
    {NULL}  /* Sentinel */
