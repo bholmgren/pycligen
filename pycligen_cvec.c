@@ -21,7 +21,6 @@
  */
 
 #include <Python.h>
-#include "structmember.h"
 
 #include <cligen/cligen.h>
 
