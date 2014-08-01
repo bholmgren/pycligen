@@ -31,6 +31,7 @@ __version__ = '0.1'
 
 
 import sys
+import copy
 import ipaddress
 if sys.version_info.major < 3:
     from urlparse import urlparse
@@ -183,7 +184,26 @@ class CgVar (_cligen.CgVar):
         return super(CgVar, self).__init__(*args, **kwargs)
 
 
+    def __eq__(self, other):
+        return super(CgVar, self).__cmp__(other) == 0
 
+    def __ne__(self, other):
+        return super(CgVar, self).__cmp__(other) != 0
+
+    def __lt__(self, other):
+        return super(CgVar, self).__cmp__(other) < 0
+
+    def __gt__(self, other):
+        return super(CgVar, self).__cmp__(other) > 0
+
+    def __le__(self, other):
+        return super(CgVar, self).__cmp__(other) <= 0
+
+    def __ge__(self, other):
+        return super(CgVar, self).__cmp__(other) >= 0
+
+    def __copy__(self):
+        return super(CgVar, self).__copy__()
 
     def name_get(self):
         """Get CgVar variable name
@@ -741,6 +761,55 @@ class Cvec ():
             if cv.name_get() == key:
                 return True
         return False
+
+    def __add__(self, other):
+        if isinstance(other, Cvec):
+            new._cvec += other._cvec
+            return new
+
+        elif isinstance(other, CgVar):
+            new = copy.copy(self)
+            new.append(other)
+            return new
+        else:
+            raise TypeError("unsupported operand type for +: '{:s}'".format(other.__class__.__name__))
+        
+
+    def __iadd__(self, other):
+        if isinstance(other, Cvec):
+            self._cvec += other._cvec
+        elif isinstance(other, CgVar):
+            self.append(other)
+        else:
+            raise TypeError("unsupported operand type for +: '{:s}'".format(other.__class__.__name__))
+        
+        return self
+
+
+    def __copy__(self):
+        new = self.__class__()
+        for cv in self._cvec: 
+            new.append(copy.copy(cv))
+        return new
+
+    def __deepcopy__(self, memo):
+        return self.__copy__()
+    
+                
+    def index(self, val):
+        for idx, cv in enumerate(self._cvec):
+            if isinstance(val, str):
+                if cv.name_get() == val:
+                    return idx
+            elif isinstance(val, CgVar):
+                if cv == val:
+                    return idx
+            else:
+                raise ValueError
+
+    def remove(self, val):
+        del self[self.index(val)]
+
 
     def append(self, arg):
         if isinstance(arg, int):
