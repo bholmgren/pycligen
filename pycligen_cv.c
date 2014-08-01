@@ -29,6 +29,7 @@
 #include <cligen/cligen.h>
 
 #include "pycligen.h"
+#include "pycligen_cv.h"
 
 
 typedef struct {
@@ -630,6 +631,24 @@ _CgVar_parse(CgVar *self, PyObject *args)
     Py_RETURN_TRUE;
 }
 
+static PyObject *
+_CgVar__cmp__(CgVar *self, PyObject *args)
+{
+    CgVar *other;
+
+    if (!PyArg_ParseTuple(args, "O!", &CgVar_Type, &other))
+        return NULL;
+
+    return PyInt_FromLong(cv_cmp(self->cv, other->cv));
+}
+
+static PyObject *
+_CgVar__copy__(CgVar *self)
+{
+    return (PyObject *)CgVar_InstanceFromCv(self->cv);
+}
+
+
 
 /*
  * Internal method: Get cg_var* pointer to self->cv. 
@@ -759,9 +778,19 @@ static PyMethodDef CgVar_methods[] = {
      "Get the string representation of variable value"
     },
 
+    {"__cmp__", (PyCFunction)_CgVar__cmp__, METH_VARARGS, 
+     "Compare CgVars"
+    },
+
+    {"__copy__", (PyCFunction)_CgVar__copy__, METH_NOARGS, 
+     "Copy CgVar"
+    },
+
     {"__cv", (PyCFunction)__CgVar_cv, METH_NOARGS, 
      "Get a pointer to self->cv"
     },
+
+
 
    {NULL}  /* Sentinel */
 };
@@ -842,8 +871,13 @@ PyObject *
 CgVar_Instance(void)
 {
     PyObject *Cv;
+    PyObject *Mod;
 
-    Cv = PyObject_CallObject((PyObject *) &CgVar_Type, NULL);
+    if ((Mod = PyImport_ImportModule("cligen")) == NULL)
+	return NULL;
+
+    Cv = PyObject_CallMethod(Mod, "CgVar", NULL);
+    Py_DECREF(Mod);
 
     return Cv;
 }    
