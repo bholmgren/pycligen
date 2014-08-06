@@ -690,11 +690,18 @@ to 'self'.  The parsing is based on the current type set.
 #
 # Cvec
 #
-class Cvec ():
+class Cvec (_cligen.Cvec):
     'A vector of CgVar'
 
-    def __init__(self):
+    def __init__(self, arg=None):
         self._cvec = []
+        if arg is not None:
+            if (isinstance(arg, list)):
+                for cv in arg:
+                    self.append(cv)
+            else:
+                raise ValueError
+
         
     def __str__(self):
 
