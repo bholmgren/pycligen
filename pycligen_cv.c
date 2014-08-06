@@ -645,7 +645,7 @@ _CgVar__cmp__(CgVar *self, PyObject *args)
 static PyObject *
 _CgVar__copy__(CgVar *self)
 {
-    return (PyObject *)CgVar_InstanceFromCv(self->cv);
+    return (PyObject *)CgVar_Instance(self->cv);
 }
 
 
@@ -697,8 +697,6 @@ static PyMethodDef CgVar_methods[] = {
      "Set the flag of the variable"
     },
 
-#if 0
-#endif
     {"_int_get", (PyCFunction)_CgVar_int_get, METH_NOARGS, 
      "Return the int value of the variable"
     },
@@ -868,35 +866,23 @@ CgVar_init_object(PyObject *m)
 }
 
 PyObject *
-CgVar_Instance(void)
-{
-    PyObject *Cv;
-    PyObject *Mod;
-
-    if ((Mod = PyImport_ImportModule("cligen")) == NULL)
-	return NULL;
-
-    Cv = PyObject_CallMethod(Mod, "CgVar", NULL);
-    Py_DECREF(Mod);
-
-    return Cv;
-}    
-
-PyObject *
-CgVar_InstanceFromCv(cg_var *cv)
+CgVar_Instance(cg_var *cv)
 {
     PyObject *Cv;
 
-    if ((Cv = CgVar_Instance()) == NULL)
+    Cv = PyObject_CallMethod(__cligen_module(), "CgVar", NULL);
+    if (Cv == NULL)
 	return NULL;
-    
-    if (cv_cp(((CgVar *)Cv)->cv, cv) < 0) {
-        PyErr_SetString(PyExc_MemoryError, "failed to allocate memory");
-        return NULL;
+
+    if (cv) {
+	if (cv_cp(((CgVar *)Cv)->cv, cv) < 0) {
+	    PyErr_SetString(PyExc_MemoryError, "failed to allocate memory");
+	    return NULL;
+	}
     }
 
     return Cv;
-}
+}    
 
 /*
  * Get cg_var* pointer from CgVar object
