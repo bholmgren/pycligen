@@ -23,7 +23,7 @@ from distutils.core import setup, Extension
 
 long_desc = """The PyCLIgen bindings implements a Python API for the CLIgen library by Olof Hagsand."""
 
-setup(name = "pyclicon",
+setup(name = "pycligen",
       version = "0.1",
       description = "Python bindings for CLIgen",
       long_description=long_desc,
