@@ -21,7 +21,6 @@
  */
 
 #include <Python.h>
-#include "structmember.h"
 
 #include <cligen/cligen.h>
 
@@ -48,6 +47,20 @@ typedef struct _CLIgen {
 } CLIgen;
 
 
+
+/*
+ * Keep an internal reference to the CLIgen module
+ */
+PyObject *
+__cligen_module()
+{
+    static PyObject *__cligen = NULL;
+
+    if (__cligen == NULL)
+	__cligen = PyImport_ImportModule("cligen");
+
+    return __cligen;
+}
 
 /*
  * Python 2/3 support function: Convert a char* to python string
@@ -152,21 +165,31 @@ CLIgen_callback(cligen_handle h, cvec *vars, cg_var *arg)
     char *func;
     CLIgen_handle ch = (CLIgen_handle)h;
     PyObject *self = (PyObject *)ch->ch_self;
+    PyObject *Ret;
     PyObject *Value = NULL;
     PyObject *Cvec = NULL;
+    PyObject *Capsule = NULL;
     int retval = -1;
     PyObject *Arg = NULL;
     
     
-    /* Get a Cvec instance */
-    if ((Cvec = Cvec_from_cvec(self, vars)) == NULL) {
-	fprintf(stderr, "Failed to create CLIgen.Cvec instance\n");
+    if ((Cvec = PyObject_CallMethod(__cligen_module(), "Cvec",  NULL)) == NULL)
+	return -1; 
+    if ((Capsule = PyCapsule_New((void *)vars, NULL, NULL)) == NULL) {
+	Py_DECREF(Cvec);
 	return -1;
     }
-    
+    Ret = PyObject_CallMethod(Cvec, "__Cvec_from_cvec", "O", Capsule);
+    Py_DECREF(Capsule);
+    if (Ret == NULL) {
+	Py_DECREF(Cvec);
+	return -1;
+    }
+    Py_DECREF(Ret);
+
     /* arg */
     if (arg)
-	Arg = (PyObject *)CgVar_InstanceFromCv(arg);
+	Arg = (PyObject *)CgVar_Instance(arg);
     else {
 	Py_INCREF(Py_None);
 	Arg = Py_None;
@@ -205,8 +228,10 @@ CLIgen_expand_cb(cligen_handle *h, char *func, cvec *vars, cg_var *arg,
     int retval = -1;
     CLIgen_handle ch = (CLIgen_handle)h;
     PyObject *self = (PyObject *)ch->ch_self;
+    PyObject *Ret;
     PyObject *Value = NULL;
     PyObject *Cvec = NULL;
+    PyObject *Capsule;
     PyObject *Arg = NULL;
     PyObject *iterator = NULL;
     PyObject *item = NULL;
@@ -215,15 +240,24 @@ CLIgen_expand_cb(cligen_handle *h, char *func, cvec *vars, cg_var *arg,
 
     *nr = 0;
 
-    /* Get a Cvec instance */
-    if ((Cvec = Cvec_from_cvec(self, vars)) == NULL) {
-	fprintf(stderr, "Failed to create CLIgen.Cvec instance\n"); /* XXX */
+    /* Get a Cvec instance */ 
+    if ((Cvec = PyObject_CallMethod(__cligen_module(), "Cvec",  NULL)) == NULL)
+	return -1;
+    if ((Capsule = PyCapsule_New((void *)vars, NULL, NULL)) == NULL) {
+	Py_DECREF(Cvec);
 	return -1;
     }
-    
+    Ret = PyObject_CallMethod(Cvec, "__Cvec_from_cvec", "O", Capsule);
+    Py_DECREF(Capsule);
+    if (Ret == NULL) {
+	Py_DECREF(Cvec);
+	return -1;
+    }
+    Py_DECREF(Ret);
+
     /* arg */
     if (arg)
-	Arg = (PyObject *)CgVar_InstanceFromCv(arg);
+	Arg = (PyObject *)CgVar_Instance(arg);
     else {
 	Py_INCREF(Py_None);
 	Arg = Py_None;
@@ -758,6 +792,10 @@ static PyMethodDef CLIgen_methods[] = {
    {NULL}  /* Sentinel */
 };
 
+
+/*
+ * CLIgen class object
+ */
 PyTypeObject CLIgen_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_cligen.CLIgen",          /* tp_name */
@@ -800,17 +838,23 @@ PyTypeObject CLIgen_Type = {
     CLIgen_new,                /* tp_new */
 };
 
+/*
+ * Module methods
+ */
+static PyMethodDef cligen_methods[] = {
+
+    {NULL}  /* Sentinel */
+};
+
 
 MOD_INIT(_cligen)
 {
     PyObject* m;
-    int CgVar_init_object(PyObject *m);
-    int ParseTree_init_object(PyObject *m);
 
-    MOD_DEF(m, "_cligen", "Python bindings for CLIgen", CLIgen_methods);
+    MOD_DEF(m, "_cligen", "Python bindings for CLIgen", cligen_methods);
     if (m == NULL)
         return MOD_ERROR_VAL;
-    
+
     if (PyType_Ready(&CLIgen_Type) < 0)
         return MOD_ERROR_VAL;
 
@@ -819,6 +863,8 @@ MOD_INIT(_cligen)
 
 
     if (CgVar_init_object(m) < 0)
+        return MOD_ERROR_VAL;
+    if (Cvec_init_object(m) < 0)
         return MOD_ERROR_VAL;
     if (ParseTree_init_object(m) < 0)
         return MOD_ERROR_VAL;
