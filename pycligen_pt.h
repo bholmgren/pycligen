@@ -23,6 +23,8 @@
 #ifndef _PY_CLIGEN_PT_H_
 #define _PY_CLIGEN_PT_H_
 
+int ParseTree_init_object(PyObject *m);
+
 extern PyTypeObject ParseTree_Type;
 
 parse_tree *ParseTree_pt(PyObject *pto);

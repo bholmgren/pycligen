@@ -47,9 +47,13 @@
   #define PyExc_PermissionError PyExc_IOError
 
   #define PyFloat_FromString(x)	PyFloat_FromString((x), NULL)
-  #define PyCapsule_New(p,n,d)  PyCObject_FromVoidPtr((p),(d))
 #endif
-
+#if PY_VERSION_HEX < 0x02070000 || (PY_VERSION_HEX >= 0x03000000 && PY_VERSION_HEX < 0x03010000)
+  #define PyCapsule_New(p,n,d)      PyCObject_FromVoidPtr((p),(d))
+  #define PyCapsule_CheckExact(p)   PyCObject_Check(p)
+  #define PyCapsule_GetPointer(p,n) PyCObject_AsVoidPtr(p)
+  #define PyCapsule_Type            PyCObject_Type
+#endif
 
 cligen_handle CLIgen_cligen_handle(PyObject *cgen);
 
@@ -61,6 +65,9 @@ char *ErrString(int restore);
 /* CLIgen callbacks */
 cg_fnstype_t *CLIgen_str2fn(char *name, void *arg, char **error);
 expand_cb *CLIgen_expand_str2fn(char *name, void *arg, char **error);
+
+/* Stored module object */
+PyObject *__cligen_module(void);
 
 
 #endif /* __PY_CLIGEN_H__ */

@@ -25,10 +25,11 @@
 
 #include <cligen/cligen.h>
 
+int CgVar_init_object(PyObject *m);
+
 extern PyTypeObject CgVar_Type;
 
-PyObject *CgVar_Instance(void);
-PyObject *CgVar_InstanceFromCv(cg_var *cv);
+PyObject *CgVar_Instance(cg_var *cv);
 cg_var *CgVar_cv(PyObject *Cv);
 
 #endif /* _PY_CLIGEN_CV_H_ */

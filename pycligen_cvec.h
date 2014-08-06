@@ -23,6 +23,6 @@
 #ifndef _PY_CLIGEN_CVEC_H_
 #define _PY_CLIGEN_CVEC_H_
 
-PyObject *Cvec_from_cvec(PyObject *self, cvec *vr);
+int Cvec_init_object(PyObject *m);
 
 #endif /* _PY_CLIGEN_CVEC_H_ */
