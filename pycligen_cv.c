@@ -66,7 +66,7 @@ CgVar_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 CgVar_init(CgVar *self, PyObject *args, PyObject *kwds)
 {
-    char *str;
+    PyObject *ret;
     char *name = NULL;
     int type = CGV_ERR;
     PyObject *Str;
@@ -88,21 +88,12 @@ CgVar_init(CgVar *self, PyObject *args, PyObject *kwds)
     }
 
     /* Parse value if specified */
-    if (value != NULL && (Str = PyObject_Str(value))) {
-	str = StringAsString(Str);
+    if (value && (Str = PyObject_Str(value))) {
+	ret = PyObject_CallMethod((PyObject *)self, "_parse", "O", Str);
 	Py_DECREF(Str);
-	if (str == NULL)
+	if (ret == NULL)
 	    return -1;
-	if (type == CGV_BOOL)  /* CLIgen wants lowercase */
-	    if (strlen(str) > 0)
-		*str = tolower(*str);
-	if (cv_parse(str, self->cv) < 0) {
-	    free(str);
-	    PyErr_Format(PyExc_ValueError,
-			 "invalid format for type '%s'", cv_type2str(type));
-	    return -1;
-	}
-	free(str);
+	Py_DECREF(ret);
     }
     
     return 0;
@@ -282,53 +273,243 @@ CgVar_flag_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
-_CgVar_int_get(CgVar *self)
+_CgVar_int8_get(CgVar *self)
 {
-    if (CgVar_type_verify(self, CGV_INT))
+    if (CgVar_type_verify(self, CGV_INT8))
         return NULL;
 	
-    return PyLong_FromLong(cv_int_get(self->cv));
+    return PyLong_FromLong(cv_int8_get(self->cv));
 }
 
 static PyObject *
-_CgVar_int_set(CgVar *self, PyObject *args)
-{
-    int32_t num;
-
-    if (CgVar_type_verify(self, CGV_INT))
-        return NULL;
-	
-    if (!PyArg_ParseTuple(args, "i", &num))
-        return NULL;
-
-    cv_int_set(self->cv, num);
-    
-    return PyLong_FromLong(num);
-}
-
-static PyObject *
-_CgVar_long_get(CgVar *self)
-{
-    if (CgVar_type_verify(self, CGV_LONG))
-        return NULL;
-	
-    return PyLong_FromLong(cv_long_get(self->cv));
-}
-
-static PyObject *
-_CgVar_long_set(CgVar *self, PyObject *args)
+_CgVar_int8_set(CgVar *self, PyObject *args)
 {
     int64_t num;
 
-    if (CgVar_type_verify(self, CGV_LONG))
+    if (CgVar_type_verify(self, CGV_INT8))
         return NULL;
 	
     if (!PyArg_ParseTuple(args, "l", &num))
         return NULL;
 
-    cv_long_set(self->cv, num);
+    cv_int8_set(self->cv, num);
     
     return PyLong_FromLong(num);
+}
+
+static PyObject *
+_CgVar_int16_get(CgVar *self)
+{
+    if (CgVar_type_verify(self, CGV_INT16))
+        return NULL;
+	
+    return PyLong_FromLong(cv_int16_get(self->cv));
+}
+
+static PyObject *
+_CgVar_int16_set(CgVar *self, PyObject *args)
+{
+    int64_t num;
+
+    if (CgVar_type_verify(self, CGV_INT16))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "l", &num))
+        return NULL;
+
+    cv_int16_set(self->cv, num);
+    
+    return PyLong_FromLong(num);
+}
+
+static PyObject *
+_CgVar_int32_get(CgVar *self)
+{
+    if (CgVar_type_verify(self, CGV_INT32))
+        return NULL;
+	
+    return PyLong_FromLong(cv_int32_get(self->cv));
+}
+
+static PyObject *
+_CgVar_int32_set(CgVar *self, PyObject *args)
+{
+    int64_t num;
+
+    if (CgVar_type_verify(self, CGV_INT32))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "l", &num))
+        return NULL;
+
+    cv_int32_set(self->cv, num);
+    
+    return PyLong_FromLong(num);
+}
+
+static PyObject *
+_CgVar_int64_get(CgVar *self)
+{
+    if (CgVar_type_verify(self, CGV_INT64))
+        return NULL;
+	
+    return PyLong_FromLong(cv_int64_get(self->cv));
+}
+
+static PyObject *
+_CgVar_int64_set(CgVar *self, PyObject *args)
+{
+    int64_t num;
+
+    if (CgVar_type_verify(self, CGV_INT64))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "l", &num))
+        return NULL;
+
+    cv_int64_set(self->cv, num);
+    
+    return PyLong_FromLong(num);
+}
+
+
+static PyObject *
+_CgVar_uint8_get(CgVar *self)
+{
+    if (CgVar_type_verify(self, CGV_UINT8))
+        return NULL;
+	
+    return PyLong_FromLong(cv_uint8_get(self->cv));
+}
+
+static PyObject *
+_CgVar_uint8_set(CgVar *self, PyObject *args)
+{
+    uint64_t num;
+
+    if (CgVar_type_verify(self, CGV_UINT8))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "L", &num))
+        return NULL;
+
+    cv_uint8_set(self->cv, num);
+    
+    return PyLong_FromLong(num);
+}
+
+static PyObject *
+_CgVar_uint16_get(CgVar *self)
+{
+    if (CgVar_type_verify(self, CGV_UINT16))
+        return NULL;
+	
+    return PyLong_FromLong(cv_uint16_get(self->cv));
+}
+
+static PyObject *
+_CgVar_uint16_set(CgVar *self, PyObject *args)
+{
+    uint64_t num;
+
+    if (CgVar_type_verify(self, CGV_UINT16))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "L", &num))
+        return NULL;
+
+    cv_uint16_set(self->cv, num);
+    
+    return PyLong_FromLong(num);
+}
+
+static PyObject *
+_CgVar_uint32_get(CgVar *self)
+{
+    uint32_t v;
+    
+    if (CgVar_type_verify(self, CGV_UINT32))
+        return NULL;
+	
+    v = cv_uint32_get(self->cv);
+    return PyLong_FromLong(v);
+}
+
+static PyObject *
+_CgVar_uint32_set(CgVar *self, PyObject *args)
+{
+    uint64_t num;
+
+    if (CgVar_type_verify(self, CGV_UINT32))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "L", &num))
+        return NULL;
+
+    cv_uint32_set(self->cv, num);
+    
+    return PyLong_FromLong(num);
+}
+
+static PyObject *
+_CgVar_uint64_get(CgVar *self)
+{
+    if (CgVar_type_verify(self, CGV_UINT64))
+        return NULL;
+	
+    return PyLong_FromLong(cv_uint64_get(self->cv));
+}
+
+static PyObject *
+_CgVar_uint64_set(CgVar *self, PyObject *args)
+{
+    uint64_t num;
+
+    if (CgVar_type_verify(self, CGV_UINT64))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "L", &num))
+        return NULL;
+
+    cv_uint64_set(self->cv, num);
+    
+    return PyLong_FromLong(num);
+}
+
+static PyObject *
+_CgVar_dec64_get(CgVar *self)
+{
+    char *dec64;
+    PyObject *Dec64;
+
+    if (CgVar_type_verify(self, CGV_DEC64))
+        return NULL;
+
+    if ((dec64 = cv2str_dup(self->cv)) == NULL)
+	return PyErr_NoMemory();
+    Dec64 = StringFromString(dec64);
+    free(dec64);
+
+    return Dec64;
+}
+
+static PyObject *
+_CgVar_dec64_set(CgVar *self, PyObject *args)
+{
+    PyObject *Dec64;
+    int n;
+
+    if (CgVar_type_verify(self, CGV_DEC64))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "Oi", &Dec64, &n))
+        return NULL;
+
+    cv_dec64_n_set(self->cv, n);
+    if (PyObject_CallMethod((PyObject *)self, "_parse", "O", Dec64) == NULL)
+	return NULL;
+    
+    return _CgVar_dec64_get(self);
 }
 
 static PyObject *
@@ -619,8 +800,19 @@ _CgVar_parse(CgVar *self, PyObject *args)
 	return NULL;
     }
     
-   if (cv_parse(str, cv) < 0) {
-	PyErr_SetString(PyExc_ValueError, "cv_parse");
+    /* XXX begin hack */
+    if (cv_type_get(cv) == CGV_BOOL) {  /* CLIgen wants lowercase */
+	if (strlen(str) > 0)
+	    *str = tolower(*str);
+    } else if (cv_type_get(cv) == CGV_DEC64) {
+	char *dot = strrchr(str, '.');
+	cv_dec64_n_set(cv, (dot ? strlen(dot+1) : 1));
+    }
+    /* XXX end hack */
+    
+    if (cv_parse(str, cv) < 0) {
+	PyErr_Format(PyExc_ValueError, "invalid format for type '%s'",
+		     cv_type2str(cv_type_get(cv)));
 	cv_free(cv);
 	return NULL;
     }
@@ -697,18 +889,81 @@ static PyMethodDef CgVar_methods[] = {
      "Set the flag of the variable"
     },
 
-    {"_int_get", (PyCFunction)_CgVar_int_get, METH_NOARGS, 
+    {"_int_get", (PyCFunction)_CgVar_int32_get, METH_NOARGS, 
      "Return the int value of the variable"
     },
-    {"_int_set", (PyCFunction)_CgVar_int_set, METH_VARARGS, 
+    {"_int_set", (PyCFunction)_CgVar_int32_set, METH_VARARGS, 
      "Set the int value of the variable"
     },
 
-    {"_long_get", (PyCFunction)_CgVar_long_get, METH_NOARGS, 
+    {"_long_get", (PyCFunction)_CgVar_int64_get, METH_NOARGS, 
      "Return the long value of the variable"
     },
-    {"_long_set", (PyCFunction)_CgVar_long_set, METH_VARARGS, 
+    {"_long_set", (PyCFunction)_CgVar_int64_set, METH_VARARGS, 
      "Set the bool value of the variable"
+    },
+
+    {"_int8_get", (PyCFunction)_CgVar_int8_get, METH_NOARGS, 
+     "Return the 8-bit int value of the variable"
+    },
+    {"_int8_set", (PyCFunction)_CgVar_int8_set, METH_VARARGS, 
+     "Set the 8-bit int value of the variable"
+    },
+
+    {"_int16_get", (PyCFunction)_CgVar_int16_get, METH_NOARGS, 
+     "Return the 16-bit int value of the variable"
+    },
+    {"_int16_set", (PyCFunction)_CgVar_int16_set, METH_VARARGS, 
+     "Set the 16-bit int value of the variable"
+    },
+
+    {"_int32_get", (PyCFunction)_CgVar_int32_get, METH_NOARGS, 
+     "Return the 32-bit int value of the variable"
+    },
+    {"_int32_set", (PyCFunction)_CgVar_int32_set, METH_VARARGS, 
+     "Set the 32-bit int value of the variable"
+    },
+
+    {"_int64_get", (PyCFunction)_CgVar_int64_get, METH_NOARGS, 
+     "Return the 64-bit int value of the variable"
+    },
+    {"_int64_set", (PyCFunction)_CgVar_int64_set, METH_VARARGS, 
+     "Set the 64-bit int value of the variable"
+    },
+
+    {"_uint8_get", (PyCFunction)_CgVar_uint8_get, METH_NOARGS, 
+     "Return the unsigned 8-bit int of the variable"
+    },
+    {"_uint8_set", (PyCFunction)_CgVar_uint8_set, METH_VARARGS, 
+     "Set the unsigned 8-bit int of the variable"
+    },
+
+    {"_uint16_get", (PyCFunction)_CgVar_uint16_get, METH_NOARGS, 
+     "Return the unsigned 16-bit int of the variable"
+    },
+    {"_uint16_set", (PyCFunction)_CgVar_uint16_set, METH_VARARGS, 
+     "Set the unsigned 16-bit int of the variable"
+    },
+
+    {"_uint32_get", (PyCFunction)_CgVar_uint32_get, METH_NOARGS, 
+     "Return the unsigned 32-bit int of the variable"
+    },
+    {"_uint32_set", (PyCFunction)_CgVar_uint32_set, METH_VARARGS, 
+     "Set the unsigned 32-bit int of the variable"
+    },
+
+    {"_uint64_get", (PyCFunction)_CgVar_uint64_get, METH_NOARGS, 
+     "Return the unsigned 64-bit int of the variable"
+    },
+    {"_uint64_set", (PyCFunction)_CgVar_uint64_set, METH_VARARGS, 
+     "Set the unsigned 64-bit int of the variable"
+    },
+
+    {"_dec64_get", (PyCFunction)_CgVar_dec64_get, METH_NOARGS, 
+     "Return the 64-bit decimal value of the variable"
+    },
+    {"_dec64_set", (PyCFunction)_CgVar_dec64_set, METH_VARARGS, 
+     "Set the 64-bit decimal value of the variable"
     },
 
     {"_bool_get", (PyCFunction)_CgVar_bool_get, METH_NOARGS, 
@@ -846,8 +1101,15 @@ CgVar_init_object(PyObject *m)
     PyModule_AddObject(m, "CgVar", (PyObject *)&CgVar_Type);
 
     PyModule_AddIntConstant(m, (char *) "CGV_ERR", CGV_ERR);
-    PyModule_AddIntConstant(m, (char *) "CGV_INT", CGV_INT);
-    PyModule_AddIntConstant(m, (char *) "CGV_LONG", CGV_LONG);
+    PyModule_AddIntConstant(m, (char *) "CGV_INT8", CGV_INT8);
+    PyModule_AddIntConstant(m, (char *) "CGV_INT16", CGV_INT16);
+    PyModule_AddIntConstant(m, (char *) "CGV_INT32", CGV_INT32);
+    PyModule_AddIntConstant(m, (char *) "CGV_INT64", CGV_INT64);
+    PyModule_AddIntConstant(m, (char *) "CGV_UINT8", CGV_UINT8);
+    PyModule_AddIntConstant(m, (char *) "CGV_UINT16", CGV_UINT16);
+    PyModule_AddIntConstant(m, (char *) "CGV_UINT32", CGV_UINT32);
+    PyModule_AddIntConstant(m, (char *) "CGV_UINT64", CGV_UINT64);
+    PyModule_AddIntConstant(m, (char *) "CGV_DEC64", CGV_DEC64);
     PyModule_AddIntConstant(m, (char *) "CGV_BOOL", CGV_BOOL);
     PyModule_AddIntConstant(m, (char *) "CGV_REST", CGV_REST);
     PyModule_AddIntConstant(m, (char *) "CGV_STRING", CGV_STRING);
@@ -861,6 +1123,9 @@ CgVar_init_object(PyObject *m)
     PyModule_AddIntConstant(m, (char *) "CGV_UUID", CGV_UUID);
     PyModule_AddIntConstant(m, (char *) "CGV_TIME", CGV_TIME);
     PyModule_AddIntConstant(m, (char *) "CGV_VOID", CGV_VOID);
+    /* Compat */
+    PyModule_AddIntConstant(m, (char *) "CGV_INT", CGV_INT32);
+    PyModule_AddIntConstant(m, (char *) "CGV_LONG", CGV_INT64);
 
     return 0;
 }

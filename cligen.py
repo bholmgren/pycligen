@@ -167,7 +167,6 @@ class CgVar (_cligen.CgVar):
     'CLIgen variable object'
     
 
-
     def __init__(self, *args, **kwargs):
         """    Optional args:
         type:   The CLIgen variable type
@@ -183,27 +182,206 @@ class CgVar (_cligen.CgVar):
       """
         return super(CgVar, self).__init__(*args, **kwargs)
 
+    def __repr__(self):
+        return super(CgVar, self).__repr__()
 
+    def __str__(self):
+        return super(CgVar, self).__str__()
+
+    def __int__(self):
+        return int(self._getnumber())
+
+    def __float__(self):
+        return float(self._getnumber())
+
+    def __cmp__(self, other):
+        return super(CgVar, self).__cmp__(other)
+
+    def __hash__(self):
+        return hash(str(self))
+    
     def __eq__(self, other):
-        return super(CgVar, self).__cmp__(other) == 0
+        return self.__cmp__(other) == 0
 
     def __ne__(self, other):
-        return super(CgVar, self).__cmp__(other) != 0
+        return self.__cmp__(other) != 0
 
     def __lt__(self, other):
-        return super(CgVar, self).__cmp__(other) < 0
+        return self.__cmp__(other) < 0
 
     def __gt__(self, other):
-        return super(CgVar, self).__cmp__(other) > 0
+        return self.__cmp__(other) > 0
 
     def __le__(self, other):
-        return super(CgVar, self).__cmp__(other) <= 0
+        return self.__cmp__(other) <= 0
 
     def __ge__(self, other):
-        return super(CgVar, self).__cmp__(other) >= 0
+        return self.__cmp__(other) >= 0
+
+    def __add__(self, other):
+
+        val = None
+        stype = self.type_get()
+        if isinstance(other, CgVar):
+            otype = other.type_get()
+        else:
+            otype = stype;
+
+        if self.isnumeric():
+            if isinstance(other, CgVar):
+                if other.isnumeric():
+                    val = self._getnumber() + other._getnumber()
+                elif other.isstring():
+                    val = str(self) + str(other)
+            elif isinstance(other, int):
+                val = self._getnumber() + other
+            elif isinstance(other, str):
+                val = str(self) + other
+
+        elif self.isstring():
+            val = str(self) + str(other)
+
+        if val is None:
+            raise TypeError("unsupported operand type(s) for +: 'CgVar({:s})' and CgVar({:s})".format(self.type2str(), other.type2str()))
+        
+        if (stype < otype):
+            type = otype
+        else:
+            type = stype;
+        return CgVar(type, self.name_get(), val)
+
+
+    def __iadd__(self, other):
+        result = self.__add__(other)
+        self.parse(str(result))
+        return self
+
+    def __mul__(self, other):
+        stype = self.type_get()
+        if isinstance(other, CgVar):
+            otype = other.type_get()
+        else:
+            otype = stype;
+
+        if self.isnumeric():
+            factor1 = self._getnumber()
+        else:
+            raise TypeError("unsupported operand type for *: 'CgVar({:s})'".format(self.type2str()))
+        
+        if isinstance(other, CgVar):
+            if other.isnumeric():
+                factor2 = other._getnumber()
+            else:
+                raise TypeError("unsupported operand type for *: 'CgVar({:s})'".format(other.type2str()))
+            
+        elif isinstance(other, int) or isinstance(other, float):
+            factor2 = other
+            
+        else:
+            raise TypeError("unsupported operand type for *: '{:s}'".format(other.__class__.__name__))
+        
+        val = factor1 * factor2
+        if (stype < otype):
+            type = otype
+        else:
+            type = stype;
+        return CgVar(type, self.name_get(), val)
+        
+        
+    def __imul__(self, other):
+        result = self.__mul__(other)
+        self.parse(str(result))
+        return self
+        
+    def __truediv__(self, other):
+        stype = self.type_get()
+        if isinstance(other, CgVar):
+            otype = other.type_get()
+        else:
+            otype = stype;
+
+        if self.isnumeric():
+            factor1 = self._getnumber()
+        else:
+            raise TypeError("unsupported operand type for /: 'CgVar({:s})'".format(self.type2str()))
+        
+        if isinstance(other, CgVar):
+            if other.isnumeric():
+                factor2 = other._getnumber()
+            else:
+                raise TypeError("unsupported operand type for /: 'CgVar({:s})'".format(other.type2str()))
+            
+        elif isinstance(other, int) or isinstance(other, float):
+            factor2 = other
+            
+        else:
+            raise TypeError("unsupported operand type for /: '{:s}'".format(other.__class__.__name__))
+        
+        val = factor1 / factor2
+        if (stype < otype):
+            type = otype
+        else:
+            type = stype;
+        return CgVar(type, self.name_get(), val)
+        
+        
+    def __itruediv__(self, other):
+        result = self.__div__(other)
+        self.parse(str(result))
+        return self
+        
+    def __div__(self, other):
+        return self.__truediv__(other)
+
+    def __idiv__(self, other):
+        return self.__itruediv__(other)
 
     def __copy__(self):
         return super(CgVar, self).__copy__()
+
+    def _getnumber(self):
+        if self.isnumeric() is False:
+            raise ValueError("not a number object")
+        type = self.type_get()
+        if type is CGV_INT8:
+            return self.int8_get()
+        elif type is CGV_INT16:
+            return self.int16_get()
+        elif type is CGV_INT32:
+            return self.int32_get()
+        elif type is CGV_INT64:
+            return self.int64_get()
+        elif type is CGV_UINT8:
+            return self.uint8_get()
+        elif type is CGV_UINT16:
+            return self.uint16_get()
+        elif type is CGV_UINT32:
+            return self.uint32_get()
+        elif type is CGV_UINT64:
+            return self.uint64_get()
+        elif type is CGV_DEC64:
+            return self.dec64_get()
+ 
+    def _setnumber(self, num):
+        if self.isnumeric() is False:
+            raise ValueError("not a number object")
+        type = self.type_get()
+        if type is CGV_INT:
+            return self.int_set(num)
+        elif type is CGV_LONG:
+            return self.long_set(num)
+
+    def isnumeric(self):
+        if self.type_get() in [CGV_INT8, CGV_INT16, CGV_INT32, CGV_INT64, CGV_UINT8, CGV_UINT16, CGV_UINT32, CGV_UINT64, CGV_DEC64]:
+            return True
+        return False
+
+    def isstring(self):
+        if self.type_get() in [CGV_STRING, CGV_REST, CGV_INTERFACE, CGV_URL]:
+            return True
+        return False
+    
+
 
     def name_get(self):
         """Get CgVar variable name
@@ -282,6 +460,261 @@ class CgVar (_cligen.CgVar):
         
 
 
+    def int8_get(self):
+        """Get CgVar variable 8-bit int value
+
+   Args:
+      None
+
+   Returns:
+      The int value
+    
+   Raises: 
+      ValueError: If 'self' is not a 8-bit int
+      """
+        return super(CgVar, self)._int8_get()
+
+
+
+    def int8_set(self, value):
+        """Set CgVar variable 8-bit int value
+
+   Args:
+      'value':  The new value
+
+   Returns:
+      The new value
+    
+   Raises:
+      ValueError: If 'self' is not a 8-bit  int
+      """
+        return super(CgVar, self)._int8_set(value)
+
+
+
+    def int16_get(self):
+        """Get CgVar variable 16-bit int value
+
+   Args:
+      None
+
+   Returns:
+      The int value
+    
+   Raises:  
+      ValueError: If 'self' is not a 16-bit  int
+      """
+        return super(CgVar, self)._int16_get()
+
+
+
+    def int16_set(self, value):
+        """Set CgVar variable 16-bit int value
+
+   Args:
+      'value':  The new value
+
+   Returns:
+      The new value
+    
+   Raises:
+      ValueError: If 'self' is not a 16-bit  int
+      """
+        return super(CgVar, self)._int16_set(value)
+
+
+
+    def int32_get(self):
+        """Get CgVar variable 32-bit int value
+
+   Args:
+      None
+
+   Returns:
+      The int value
+    
+   Raises: 
+      ValueError: If 'self' is not a 32-bit  int
+      """
+        return super(CgVar, self)._int32_get()
+
+
+
+    def int32_set(self, value):
+        """Set CgVar variable 32-bit int value
+
+   Args:
+      'value':  The new value
+
+   Returns:
+      The new value
+    
+   Raises:
+      ValueError: If 'self' is not a 32-bit  int
+      """
+        return super(CgVar, self)._int32_set(value)
+
+
+
+    def int64_get(self):
+        """Get CgVar variable 64-bit int value
+
+   Args:
+      None
+
+   Returns:
+      The int value
+    
+   Raises: 
+      ValueError: If 'self' is not a 64-bit  int
+      """
+        return super(CgVar, self)._int64_get()
+
+
+
+    def int64_set(self, value):
+        """Set CgVar variable 64-bit int value
+
+   Args:
+      'value':  The new value
+
+   Returns:
+      The new value
+    
+   Raises:
+      ValueError: If 'self' is not a 64-bit  int
+      """
+        return super(CgVar, self)._int64_set(value)
+
+
+    def uint8_get(self):
+        """Get CgVar variable 8-bit unsigned int value
+
+   Args:
+      None
+
+   Returns:
+      The unsigned int value
+    
+   Raises: 
+      ValueError: If 'self' is not a 8-bit unsigned int
+      """
+        return super(CgVar, self)._uint8_get()
+
+
+
+    def uint8_set(self, value):
+        """Set CgVar variable 8-bit unsigned int value
+
+   Args:
+      'value':  The new value
+
+   Returns:
+      The new value
+    
+   Raises:
+      ValueError: If 'self' is not a 8-bit unsigned int
+      """
+        return super(CgVar, self)._uint8_set(value)
+
+
+
+    def uint16_get(self):
+        """Get CgVar variable 16-bit unsigned int value
+
+   Args:
+      None
+
+   Returns:
+      The unsigned int value
+    
+   Raises: 
+      ValueError: If 'self' is not a 16-bit unsigned int
+      """
+        return super(CgVar, self)._uint16_get()
+
+
+
+    def uint16_set(self, value):
+        """Set CgVar variable 16-bit unsigned int value
+
+   Args:
+      'value':  The new value
+
+   Returns:
+      The new value
+    
+   Raises:
+      ValueError: If 'self' is not a 16-bit unsigned int
+      """
+        return super(CgVar, self)._uint16_set(value)
+
+
+
+    def uint32_get(self):
+        """Get CgVar variable 32-bit unsigned int value
+
+   Args:
+      None
+
+   Returns:
+      The unsigned int value
+    
+   Raises: 
+      ValueError: If 'self' is not a 32-bit unsigned int
+      """
+        return super(CgVar, self)._uint32_get()
+
+
+
+    def uint32_set(self, value):
+        """Set CgVar variable 32-bit unsigned int value
+
+   Args:
+      'value':  The new value
+
+   Returns:
+      The new value
+    
+   Raises:
+      ValueError: If 'self' is not a 32-bit unsigned int
+      """
+        return super(CgVar, self)._uint32_set(value)
+
+
+
+    def uint64_get(self):
+        """Get CgVar variable 64-bit unsigned int value
+
+   Args:
+      None
+
+   Returns:
+      The unsigned int value
+    
+   Raises: 
+      ValueError: If 'self' is not a 64-bit unsigned int
+      """
+        return super(CgVar, self)._uint64_get()
+
+
+
+    def uint64_set(self, value):
+        """Set CgVar variable 64-bit unsigned int value
+
+   Args:
+      'value':  The new value
+
+   Returns:
+      The new value
+    
+   Raises:
+      ValueError: If 'self' is not a 64-bit unsigned int
+      """
+        return super(CgVar, self)._uint64_set(value)
+
+
+
     def int_get(self):
         """Get CgVar variable int value
 
@@ -292,7 +725,7 @@ class CgVar (_cligen.CgVar):
       The int value
     
    Raises: 
-      None
+      ValueError: If 'self' is not a int
       """
         return super(CgVar, self)._int_get()
 
@@ -324,7 +757,7 @@ class CgVar (_cligen.CgVar):
       The long value
     
    Raises: 
-      None
+      ValueError: If 'self' is not a long
       """
         return super(CgVar, self)._long_get()
 
@@ -346,6 +779,36 @@ class CgVar (_cligen.CgVar):
 
 
 
+    def dec64_get(self):
+        """Get CgVar variable 64-bit decimal value
+
+   Args:
+      None
+
+   Returns:
+      The decimal value
+    
+   Raises: 
+      ValueError: If 'self' is not a decimal value
+      """
+        return float(super(CgVar, self)._dec64_get())
+
+
+
+    def dec64_set(self, value):
+        """Set CgVar variable 64-bit decimal value
+
+   Args:
+      'value':  The new value
+
+   Returns:
+      The new value
+    
+   Raises:
+      ValueError: If 'self' is not a decimal value
+      """
+        return super(CgVar, self)._uint64_set(str(value))
+
     def bool_get(self):
         """Get CgVar variable boolean value
 
@@ -356,7 +819,7 @@ class CgVar (_cligen.CgVar):
       True or False
     
    Raises: 
-      None
+      ValueError: If 'self' is not a boolean
       """
         return super(CgVar, self)._bool_get()
 
@@ -845,7 +1308,7 @@ class Cvec (_cligen.Cvec):
 #class ParseTree():
 #    'CLIgen parse tree'
 #
-#    def __init__(self, *args, **kwargs):
+
 #        """ParseTree constructor. 
 #        
 #Takes one named argument:
