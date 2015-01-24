@@ -513,6 +513,53 @@ _CgVar_dec64_set(CgVar *self, PyObject *args)
 }
 
 static PyObject *
+_CgVar_dec64_n_get(CgVar *self)
+{
+    if (CgVar_type_verify(self, CGV_DEC64))
+        return NULL;
+
+    return PyLong_FromLong(cv_dec64_n_get(self->cv));
+}
+
+static PyObject *
+_CgVar_dec64_n_set(CgVar *self, PyObject *args)
+{
+    uint32_t n;
+
+    if (CgVar_type_verify(self, CGV_DEC64))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "I", &n))
+        return NULL;
+
+    return PyLong_FromLong(cv_dec64_n_set(self->cv, n));
+}
+
+static PyObject *
+_CgVar_dec64_i_get(CgVar *self)
+{
+    if (CgVar_type_verify(self, CGV_DEC64))
+        return NULL;
+
+    return PyLong_FromLong(cv_dec64_i_get(self->cv));
+}
+
+static PyObject *
+_CgVar_dec64_i_set(CgVar *self, PyObject *args)
+{
+    int64_t i;
+
+    if (CgVar_type_verify(self, CGV_DEC64))
+        return NULL;
+	
+    if (!PyArg_ParseTuple(args, "L", &i))
+        return NULL;
+
+    return PyLong_FromLong(cv_dec64_i_set(self->cv, i));
+}
+
+
+static PyObject *
 _CgVar_bool_get(CgVar *self)
 {
     if (CgVar_type_verify(self, CGV_BOOL))
@@ -964,6 +1011,20 @@ static PyMethodDef CgVar_methods[] = {
     },
     {"_dec64_set", (PyCFunction)_CgVar_dec64_set, METH_VARARGS, 
      "Set the 64-bit decimal value of the variable"
+    },
+
+    {"_dec64_n_get", (PyCFunction)_CgVar_dec64_n_get, METH_NOARGS, 
+     "Return the precisoon of 64-bit decimal value of the variable"
+    },
+    {"_dec64_n_set", (PyCFunction)_CgVar_dec64_n_set, METH_VARARGS, 
+     "Set the precision of 64-bit decimal value of the variable"
+    },
+
+    {"_dec64_i_get", (PyCFunction)_CgVar_dec64_i_get, METH_NOARGS, 
+     "Return the 64-bit decimal of variable"
+    },
+    {"_dec64_i_set", (PyCFunction)_CgVar_dec64_i_set, METH_VARARGS, 
+     "Set the 64-bit value of decimal variable"
     },
 
     {"_bool_get", (PyCFunction)_CgVar_bool_get, METH_NOARGS, 

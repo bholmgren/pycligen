@@ -49,7 +49,7 @@ CPPFLAGS="-DHAVE_PYCLIGEN_CONFIG_H"
 CFLAGS="-Wall ${CFLAGS}"
 LDFLAGS="-g ${LDFLAGS}"
 
-# Check Python >= 3.3
+# Check Python
 PKG_CHECK_MODULES([python], [python3 >= 3.3])
 # Check CLIgen 
 AC_CHECK_HEADERS(cligen/cligen.h,,AC_MSG_ERROR("cligen headers are required. Install and rerun configure."))

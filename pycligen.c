@@ -107,6 +107,18 @@ done:
     return retval;	
 }
 
+/*
+ * Python 2/3 support function: Convert a int to python int
+ */
+PyObject *
+IntFromLong(long n)
+{
+#if PY_MAJOR_VERSION >= 3
+    return PyLong_FromLong(n);
+#else
+    return PyInt_FromLong(n);
+#endif
+}
 
 
 /*

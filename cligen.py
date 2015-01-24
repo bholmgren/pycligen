@@ -256,6 +256,44 @@ class CgVar (_cligen.CgVar):
         self.parse(str(result))
         return self
 
+    def __sub__(self, other):
+
+        val = None
+        stype = self.type_get()
+        if isinstance(other, CgVar):
+            otype = other.type_get()
+        else:
+            otype = stype;
+
+        if self.isnumeric():
+            if isinstance(other, CgVar):
+                if other.isnumeric():
+                    val = self._getnumber() - other._getnumber()
+                elif other.isstring():
+                    val = str(self) - str(other)
+            elif isinstance(other, int):
+                val = self._getnumber() - other
+            elif isinstance(other, str):
+                val = str(self) - other
+
+        elif self.isstring():
+            val = str(self) - str(other)
+
+        if val is None:
+            raise TypeError("unsupported operand type(s) for -: 'CgVar({:s})' and CgVar({:s})".format(self.type2str(), other.type2str()))
+        
+        if (stype < otype):
+            type = otype
+        else:
+            type = stype;
+        return CgVar(type, self.name_get(), val)
+
+
+    def __isub__(self, other):
+        result = self.__sub__(other)
+        self.parse(str(result))
+        return self
+
     def __mul__(self, other):
         stype = self.type_get()
         if isinstance(other, CgVar):
@@ -294,6 +332,7 @@ class CgVar (_cligen.CgVar):
         return self
         
     def __truediv__(self, other):
+        precision = self._dec64_n_get()
         stype = self.type_get()
         if isinstance(other, CgVar):
             otype = other.type_get()
@@ -322,7 +361,8 @@ class CgVar (_cligen.CgVar):
             type = otype
         else:
             type = stype;
-        return CgVar(type, self.name_get(), val)
+        fmt = '{:.'+str(precision)+'f}'
+        return CgVar(type, self.name_get(), fmt.format(val))
         
         
     def __itruediv__(self, other):

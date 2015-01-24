@@ -60,6 +60,7 @@ cligen_handle CLIgen_cligen_handle(PyObject *cgen);
 /* Python 3/2 support functions */
 PyObject *StringFromString(const char *str);
 char *StringAsString(PyObject *obj);
+PyObject *IntFromLong(long n);
 char *ErrString(int restore);
 
 /* CLIgen callbacks */
