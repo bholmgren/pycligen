@@ -2,7 +2,7 @@
 #
 #  PyCLIgen tutorial application
 #
-# Copyright (C) 2014 Benny Holmgren
+# Copyright (C) 2014-2015 Benny Holmgren
 #
 #  Translation to Python of cligen_tutorial.c included in CLIgen distribution
 #  by Olof Hagsand, https://github.com/olofhagsand/cligen.

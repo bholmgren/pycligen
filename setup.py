@@ -2,7 +2,7 @@
 #
 #  PyCLIgen tutorial application
 #
-# Copyright (C) 2014 Benny Holmgren
+# Copyright (C) 2014-2015 Benny Holmgren
 #
 #  This file is part of PyCLIgen.
 #
@@ -36,7 +36,7 @@ setup(name = "pycligen",
         Extension(
             "_cligen",
             ["pycligen.c", "pycligen_cv.c", "pycligen_pt.c", "pycligen_cvec.c"],
-            libraries=['cligen'],
+            libraries=['cligen','python2.7'],
             )
         ]
 )

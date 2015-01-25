@@ -1,7 +1,7 @@
 /* 
  * py_cligen.c
  *
- * Copyright (C) 2014 Benny Holmgren
+ * Copyright (C) 2014-2015 Benny Holmgren
  *
  * This file is part of PyCLIgen.
  *
